@@ -5,3 +5,4 @@ Lervis/Lervis/Scripts/*
 Lervis/Lervis/share/*
 Lervis/Lervis/pyvenv.cfg
 Lervis\Lervis\Functions\__pycache__/*
+Lervis/Lervis/Functions/__pycache__/API.cpython-310.pyc
