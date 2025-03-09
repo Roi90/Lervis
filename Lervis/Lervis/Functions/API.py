@@ -76,9 +76,11 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=10, ordenar_por='submi
                 "resumen": entry.summary,
                 "fecha_publicacion": entry.published,
                 "categorias": entry.tags,
-                "url_pdf": entry.id.replace("abs", "pdf"),  # Convertir URL de abstract a URL de PDF
+                # Convertir URL de abstract a URL de PDF
+                "url_pdf": entry.id.replace("abs", "pdf"),  
                 "url_abstract": entry.id,
-                "id" : entry.id.split("/")[-1] # El ultimo valor del ID
+                # El ultimo valor del ID
+                "id" : entry.id.split("/")[-1] 
             }
             
             publicaciones.append(publicacion)
