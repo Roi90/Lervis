@@ -5,8 +5,11 @@ Autor: Roi Pereira Fiuza
 Fecha: 08/03/2024
 """
 
-from Functions.API import extraer_publicaciones_arxiv
+from Functions.API import extraccion_por_categorias
+import pandas as pd
 
-metadatos_publicaciones = extraer_publicaciones_arxiv('cs.AI', max_resultados=10)
-metadatos_publicaciones.to_excel('publicaciones_arxiv.xlsx', index=False)
-print(metadatos_publicaciones)
+#metadatos_publicaciones = descarga_por_batches(1000)
+aaa = extraccion_por_categorias()
+print(len(aaa))
+#print(metadatos_publicaciones)
+
