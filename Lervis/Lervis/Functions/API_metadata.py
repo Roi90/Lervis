@@ -52,7 +52,8 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='sub
     try:
         logger.debug("Enviando solicitud HTTP...")
         response = requests.get(url)
-        response.raise_for_status()  # Verificar si hubo errores en la petición
+        # Verificar si hubo errores en la petición
+        response.raise_for_status()  
         logger.debug(f"Respuesta recibida. Código de estado: {response.status_code}")
         
         # Parsear el feed con feedparser
@@ -85,7 +86,6 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='sub
                 "categorias": categorias,
                 # Convertir URL de abstract a URL de PDF
                 "url_pdf": entry.id.replace("abs", "pdf"),  
-                "url_abstract": entry.id,
                 # El ultimo valor del ID
                 "id" : entry.id.split("/")[-1],
                 "categoria": categoria
@@ -106,7 +106,7 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='sub
         logger.error(f"Error inesperado durante la extracción: {e}", exc_info=True)
         return pd.DataFrame()
     
-def extraccion_por_categorias():
+def extraccion_por_categorias(max_resultados=1000):
     """
     Ejecuta la función extraer_publicaciones_arxiv iterando por todas las categorías definidas en categorias_arxiv.
         
@@ -126,7 +126,7 @@ def extraccion_por_categorias():
         # Descargar metadatos de la categoria
         logger.debug(f"Descargando metadatos de la categoria {categorias_arxiv[i].upper()}...")
         # DF con los metadatos de la categoria
-        metadatos_categoria = extraer_publicaciones_arxiv(i, max_resultados=200) # VALOR DE PRUEBA DESPLIEGUE EN 1000 -------------------
+        metadatos_categoria = extraer_publicaciones_arxiv(i, max_resultados=200) # VALOR DE PRUEBA DESPLIEGUE EN 1000 -------------------!!!
         df_lst.append(metadatos_categoria)
         #print(metadatos_categoria)
     
