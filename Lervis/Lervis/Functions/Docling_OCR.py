@@ -5,8 +5,6 @@ segmentar el PDF mediante el OCR.
 Autor: Roi Pereira Fiuza
 Fecha: 08/03/2024
 """
-import datetime
-from io import BytesIO
 import time
 from pathlib import Path
 import pandas as pd
@@ -20,7 +18,7 @@ from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.utils.export import generate_multimodal_pages
 from docling.utils.utils import create_hash
-import requests
+
 
 # Definir resolución (ajústala si es necesario)
 IMAGE_RESOLUTION_SCALE = 1.0
@@ -62,14 +60,14 @@ def Carga_Docling_OCR():
 
 def Archivo_to_OCR(input_doc_path: str, doc_converter: DocumentConverter) -> Dataset:
     """
-    Descarga un PDF desde una URL, lo procesa con OCR y devuelve un Dataset con los resultados.
+    Procesa un documento PDF con OCR y devuelve un Dataset con los resultados.
 
     Parámetros:
     -----------
-    pdf_url : str
-        URL del documento PDF a procesar.
-    pdf_id : str
-        Identificador del documento PDF.
+    input_doc_path : str
+        Ruta del documento PDF a procesar.
+    doc_converter : DocumentConverter
+        Objeto DocumentConverter configurado para procesar documentos PDF con OCR.
 
     Retorna:
     --------
@@ -136,4 +134,6 @@ def Archivo_to_OCR(input_doc_path: str, doc_converter: DocumentConverter) -> Dat
 
     end_time = time.time() - start_time
     logger.info(f"Documento descargado y segmentado en {end_time:.2f} segundos.")
+    # Reconstruccion de las imagenes dentro del tipo dataset.
+    dataset = dataset.map(transform_bytes_to_image)
     return dataset

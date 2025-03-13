@@ -42,14 +42,19 @@ def Carga_FLorence2_modelo(model_id='microsoft/Florence-2-large'):
 
 
 def Florence2_detailed_annotation(model, processor, image: Image, task_prompt='<MORE_DETAILED_CAPTION>', text_input=None):
+    """
+    Genera una anotación detallada para una imagen dada utilizando el modelo y procesador especificados.
+    Args:
+        model: El modelo preentrenado utilizado para generar anotaciones.
+        processor: El procesador utilizado para preparar entradas y decodificar salidas.
+        image (Image): La imagen a anotar.
+        task_prompt (str, opcional): El prompt para guiar la tarea de anotación. Por defecto es '<MORE_DETAILED_CAPTION>'.
+        text_input (str, opcional): Entrada de texto adicional que se añadirá al prompt de la tarea. Por defecto es None.
+    Returns:
+        str: La anotación detallada generada para la imagen.
+    """
 
-    logger = Florence_log()
-
-    #model_id = 'microsoft/Florence-2-large'
-    #model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype='auto').eval().to('cuda')
-    #processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
-
-    
+    logger = Florence_log()   
     
     if text_input is None:
         prompt = task_prompt

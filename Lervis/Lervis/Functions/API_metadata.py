@@ -112,7 +112,8 @@ def extraccion_por_categorias(max_resultados=1000):
         
     Parámetros:
     -----------
-    Ninguno
+    max_resultados : int
+        Número máximo de resultados a devolver por categoría (por defecto 1000)
     
     Retorna:
     --------
@@ -126,7 +127,7 @@ def extraccion_por_categorias(max_resultados=1000):
         # Descargar metadatos de la categoria
         logger.debug(f"Descargando metadatos de la categoria {categorias_arxiv[i].upper()}...")
         # DF con los metadatos de la categoria
-        metadatos_categoria = extraer_publicaciones_arxiv(i, max_resultados=200) # VALOR DE PRUEBA DESPLIEGUE EN 1000 -------------------!!!
+        metadatos_categoria = extraer_publicaciones_arxiv(i, max_resultados) # VALOR DE PRUEBA DESPLIEGUE EN 1000 -------------------!!!
         df_lst.append(metadatos_categoria)
         #print(metadatos_categoria)
     

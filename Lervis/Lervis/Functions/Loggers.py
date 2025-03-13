@@ -20,7 +20,7 @@ def extraccion_metadatos_log() -> logging.Logger:
     
     # Verifica si el logger ya tiene handlers para evitar duplicados
     if not logger.hasHandlers():
-        logger.setLevel(logging.DEBUG)  # Cambiado a DEBUG para que registre todos los mensajes
+        logger.setLevel(logging.INFO)  # Cambiado a DEBUG para que registre todos los mensajes
         
         # Consola
         consola_handler = logging.StreamHandler()
