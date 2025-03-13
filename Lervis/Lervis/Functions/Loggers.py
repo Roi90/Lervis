@@ -185,3 +185,95 @@ def Florence_log() -> logging.Logger:
             logger.error(f"Error al configurar el FileHandler: {e}")
     
     return logger
+
+
+def Nomic_log() -> logging.Logger:
+    """
+    Crea y configura un logger para la extracción de metadatos.
+    Si el logger ya tiene handlers, no los duplica.
+    
+    Retorna:
+    --------
+    logging.Logger: Logger configurado
+    """
+    logger = logging.getLogger('Nomic-embed')
+    
+    # Verifica si el logger ya tiene handlers para evitar duplicados
+    if not logger.hasHandlers():
+        logger.setLevel(logging.DEBUG)  # Cambiado a DEBUG para que registre todos los mensajes
+        
+        # Consola
+        consola_handler = logging.StreamHandler()
+        consola_handler.setLevel(logging.INFO)  # Nivel de consola ajustado a DEBUG
+        
+        # Formato del log
+        formateador = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        consola_handler.setFormatter(formateador)
+        
+
+        logger.addHandler(consola_handler)
+        
+        # Verifica si el directorio 'Logs/' existe, si no lo crea
+        log_dir = 'Logs'
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)  # Crea la carpeta Logs si no existe
+        
+        # Configura el manejador de archivo
+        log_file_path = os.path.join(log_dir, 'Nomic-embed.log')
+        
+        try:
+            archivo_handler = logging.FileHandler(log_file_path)
+            archivo_handler.setLevel(logging.DEBUG) 
+            archivo_handler.setFormatter(formateador)
+            logger.addHandler(archivo_handler)
+
+        except Exception as e:
+            logger.error(f"Error al configurar el FileHandler: {e}")
+    
+    return logger
+
+
+def BART_log() -> logging.Logger:
+    """
+    Crea y configura un logger para la extracción de metadatos.
+    Si el logger ya tiene handlers, no los duplica.
+    
+    Retorna:
+    --------
+    logging.Logger: Logger configurado
+    """
+    logger = logging.getLogger('BART')
+    
+    # Verifica si el logger ya tiene handlers para evitar duplicados
+    if not logger.hasHandlers():
+        logger.setLevel(logging.DEBUG)  # Cambiado a DEBUG para que registre todos los mensajes
+        
+        # Consola
+        consola_handler = logging.StreamHandler()
+        consola_handler.setLevel(logging.INFO)  # Nivel de consola ajustado a DEBUG
+        
+        # Formato del log
+        formateador = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        consola_handler.setFormatter(formateador)
+        
+
+        logger.addHandler(consola_handler)
+        
+        # Verifica si el directorio 'Logs/' existe, si no lo crea
+        log_dir = 'Logs'
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)  # Crea la carpeta Logs si no existe
+        
+        # Configura el manejador de archivo
+        log_file_path = os.path.join(log_dir, 'BART.log')
+        
+        try:
+            archivo_handler = logging.FileHandler(log_file_path)
+            archivo_handler.setLevel(logging.DEBUG) 
+            archivo_handler.setFormatter(formateador)
+            logger.addHandler(archivo_handler)
+
+        except Exception as e:
+            logger.error(f"Error al configurar el FileHandler: {e}")
+    
+    return logger

@@ -16,7 +16,7 @@ import time
 from Functions.Loggers import Florence_log
 
 
-def Carga_FLorence2_modelo(model_id='microsoft/Florence-2-large'):
+def Carga_FLorence2_modelo():
     """
     Carga el modelo de Florence-2 y el procesador de texto.
 
@@ -31,7 +31,7 @@ def Carga_FLorence2_modelo(model_id='microsoft/Florence-2-large'):
         Una tupla que contiene el identificador del modelo, el modelo y el procesador.
     """
     logger = Florence_log()
-
+    model_id='microsoft/Florence-2-large'
     logger.info(f"Modelo {model_id} cargado con éxito.")
 
     model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype='auto').eval().to('cuda')
