@@ -80,15 +80,17 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='sub
 
             publicacion = {
                 "titulo": entry.title,
-                "autores": autores,
-                "resumen": entry.summary,
+                "autores": autores.split(', '),
+                # De momento, no es necesario, ya que se pretende generar el resumen enriquecido.
+                #"resumen": entry.summary,
                 "fecha_publicacion": entry.published,
-                "categorias": categorias,
+                # Se mantienen con el codigo de arxiv, ya que hay publicaciones que aparecen en otras categorias fuera de computer science
+                "categorias_lista": categorias,
                 # Convertir URL de abstract a URL de PDF
                 "url_pdf": entry.id.replace("abs", "pdf"),  
                 # El ultimo valor del ID
-                "id" : entry.id.split("/")[-1],
-                "categoria": categoria
+                "identificador_arxiv" : entry.id.split("/")[-1],
+                "categoria_principal": categoria
             }
             
             publicaciones.append(publicacion)

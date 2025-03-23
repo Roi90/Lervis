@@ -186,8 +186,7 @@ def Florence_log() -> logging.Logger:
     
     return logger
 
-
-def Nomic_log() -> logging.Logger:
+def BAAI_log() -> logging.Logger:
     """
     Crea y configura un logger para la extracción de metadatos.
     Si el logger ya tiene handlers, no los duplica.
@@ -196,7 +195,7 @@ def Nomic_log() -> logging.Logger:
     --------
     logging.Logger: Logger configurado
     """
-    logger = logging.getLogger('Nomic-embed')
+    logger = logging.getLogger('BAAI')
     
     # Verifica si el logger ya tiene handlers para evitar duplicados
     if not logger.hasHandlers():
@@ -219,7 +218,7 @@ def Nomic_log() -> logging.Logger:
             os.makedirs(log_dir)  # Crea la carpeta Logs si no existe
         
         # Configura el manejador de archivo
-        log_file_path = os.path.join(log_dir, 'Nomic-embed.log')
+        log_file_path = os.path.join(log_dir, 'BAAI.log')
         
         try:
             archivo_handler = logging.FileHandler(log_file_path)
@@ -231,7 +230,6 @@ def Nomic_log() -> logging.Logger:
             logger.error(f"Error al configurar el FileHandler: {e}")
     
     return logger
-
 
 def BART_log() -> logging.Logger:
     """

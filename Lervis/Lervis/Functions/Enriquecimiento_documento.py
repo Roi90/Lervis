@@ -44,7 +44,7 @@ def enriquecimiento_doc(dataset, F2_model, F2_processor):
                 # Se recorta la imagen para solo centrarse en el diagrama obtenido por los segmentos
                 cropped_image = dataset[i]['image'].crop((left, top, right, bottom))
                 
-                # Archivo temporal
+                # Archivo temporal para la imagen
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_img_file:
                     # Guardado como archivo temporal.
                     cropped_image.save(temp_img_file.name)
@@ -56,7 +56,6 @@ def enriquecimiento_doc(dataset, F2_model, F2_processor):
                     Path(temp_img_file.name).unlink()  # Eliminamos el archivo usando el nombre
 
                 texto_enriquecido += anotacion
-                #print(f"Después de la modificación: {segments}")
             else:
                 texto_enriquecido += f'\n\n {segments["text"]}'
     return texto_enriquecido

@@ -74,7 +74,8 @@ def Archivo_to_OCR(input_doc_path: str, doc_converter: DocumentConverter) -> Dat
     Dataset
         Dataset con los resultados del OCR.
     """
-
+     # Configurar el dispositivo (GPU o CPU)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger = Docling_log()
 
     # Archivo input
@@ -82,16 +83,6 @@ def Archivo_to_OCR(input_doc_path: str, doc_converter: DocumentConverter) -> Dat
     if not input_doc_path.exists():
         logger.error(f"El archivo {input_doc_path} no existe.")
         return None
-
-    # Configurar opciones de OCR
-    
-    #pipeline_options = PdfPipelineOptions()
-    #pipeline_options.images_scale = IMAGE_RESOLUTION_SCALE
-    #pipeline_options.generate_page_images = True
-
-    #doc_converter = DocumentConverter(
-    #    format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
-    #)
 
     start_time = time.time()
     conv_res = doc_converter.convert(input_doc_path)  # Se pasa el PDF en memoria en lugar de un archivo
