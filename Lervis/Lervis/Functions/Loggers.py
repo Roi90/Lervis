@@ -231,7 +231,7 @@ def BAAI_log() -> logging.Logger:
     
     return logger
 
-def BART_log() -> logging.Logger:
+def Llama31_resumen_log() -> logging.Logger:
     """
     Crea y configura un logger para la extracción de metadatos.
     Si el logger ya tiene handlers, no los duplica.
@@ -240,7 +240,7 @@ def BART_log() -> logging.Logger:
     --------
     logging.Logger: Logger configurado
     """
-    logger = logging.getLogger('BART')
+    logger = logging.getLogger('Llama 3.1-resumen')
     
     # Verifica si el logger ya tiene handlers para evitar duplicados
     if not logger.hasHandlers():
@@ -263,7 +263,7 @@ def BART_log() -> logging.Logger:
             os.makedirs(log_dir)  # Crea la carpeta Logs si no existe
         
         # Configura el manejador de archivo
-        log_file_path = os.path.join(log_dir, 'BART.log')
+        log_file_path = os.path.join(log_dir, 'Llama31_resumen.log')
         
         try:
             archivo_handler = logging.FileHandler(log_file_path)

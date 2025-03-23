@@ -74,8 +74,7 @@ def Archivo_to_OCR(input_doc_path: str, doc_converter: DocumentConverter) -> Dat
     Dataset
         Dataset con los resultados del OCR.
     """
-     # Configurar el dispositivo (GPU o CPU)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     logger = Docling_log()
 
     # Archivo input

@@ -81,8 +81,7 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='sub
             publicacion = {
                 "titulo": entry.title,
                 "autores": autores.split(', '),
-                # De momento, no es necesario, ya que se pretende generar el resumen enriquecido.
-                #"resumen": entry.summary,
+                "resumen": str(entry.summary).replace('\n', ' ').strip(),
                 "fecha_publicacion": entry.published,
                 # Se mantienen con el codigo de arxiv, ya que hay publicaciones que aparecen en otras categorias fuera de computer science
                 "categorias_lista": categorias,

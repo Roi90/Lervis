@@ -1,36 +1,21 @@
-Lervis/Lervis/Include/*
-Lervis/Lervis/Lib/*
-Lervis/Lervis/Logs/*
-Lervis/Lervis/Scripts/*
-Lervis/Lervis/share/*
-Lervis/Lervis/pyvenv.cfg
-Lervis/Lervis/Functions/__pycache__/*
-Lervis/Lervis/Functions/__pycache__/API.cpython-310.pyc
-Lervis/Lervis/Temp_files/*
-Lervis/Lervis/descarga_PDF.log
-PEC 1/Lervis.gan
-Segmentacion_PDF/DOCLING_IBM.ipynb
-Lervis/Lervis/2503.04725v1.pdf
+# Ignorar carpetas de documentación y logs  
+Documentacion Proyecto/  
+Logs/  
+
+# Ignorar scripts y archivos compartidos  
+Scripts/  
+share/  
+
+# Ignorar archivos de caché y configuración  
+Functions/__pycache__/  
+pyvenv.cfg  
+
+# Ignorar bibliotecas y archivos de inclusión del entorno virtual  
+Include/  
+Lib/  
+# Ignorar archivos compilados de Python
+__pycache__/
+*.pyc
+*.pyo
 Lervis/Lervis/Diagrama_Pagina1_Florence2.png
 Lervis/Lervis/publicaciones_arxiv.xlsx
-
-Segmentacion_PDF/DOCLING_IBM.ipynb
-PEC 1/Lervis.gan
-Segmentacion_PDF/DOCLING_IBM.ipynb
-Documentacion Proyecto/Estrategia_de_Indexacion_para_Publicaciones_en_PostgreSQL.docx
-Documentacion Proyecto/Guia transversal sobre la CCEG para estudiantado de TFx-EIMT.pdf
-Documentacion Proyecto/Guia_TF_ES_2022.pdf
-Documentacion Proyecto/Indices_PostgreSQL_y_Lists_en_IVFFlat.docx
-Documentacion Proyecto/Lervis - copia.docx
-Documentacion Proyecto/Lervis-chart.html
-Documentacion Proyecto/Lervis-GANTT.png
-Documentacion Proyecto/Lervis-resources.html
-Documentacion Proyecto/Lervis-tasks.html
-Documentacion Proyecto/Lervis.docx
-Documentacion Proyecto/Lervis.gan
-Documentacion Proyecto/Lervis.pdf
-Documentacion Proyecto/Propuesta TFG.pdf
-Documentacion Proyecto/Propuesta_TFG.docx
-Documentacion Proyecto/Propuesta_TFG.pdf
-Documentacion Proyecto/Template Rubrica TF GCDA - Nombre Estudiante (v20221_1).xlsx
-Documentacion Proyecto/TFM_Plantilla_Memoria_es_v8_2024.docx
