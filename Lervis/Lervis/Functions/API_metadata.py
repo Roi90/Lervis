@@ -135,3 +135,21 @@ def extraccion_por_categorias(max_resultados=1000):
     # Concatenacion
     df_metadata_total = pd.concat(df_lst, ignore_index=True)
     return df_metadata_total
+
+def filtrar_ayer(df: pd.DataFrame):
+    """
+    Filtra un DataFrame para obtener las filas cuya fecha de publicación es la de ayer.
+    Args:
+        df (pd.DataFrame): DataFrame que contiene una columna 'fecha_publicacion' con fechas en formato 'YYYY-MM-DD'.
+    Returns:
+        pd.DataFrame: DataFrame filtrado con las filas cuya 'fecha_publicacion' es igual a la fecha de ayer.
+    """
+
+    # Calcular la fecha de ayer
+    ayer = datetime.now() - timedelta(days=1)
+    # Formato 2025-01-01
+    fecha_ayer = ayer.strftime('%Y-%m-%d')
+
+    df_filtrado = df[df['fecha_publicacion'] == fecha_ayer]
+
+    return df_filtrado

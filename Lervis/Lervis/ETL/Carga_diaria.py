@@ -1,15 +1,16 @@
 """
-Este archivo contiene funciones para la primera carga de datos en la BBDD, incluyendo el proceso
-de transformacion de los datos.
+Este archivo contiene funciones para extraer datos de la API de arXiv de forma diaria.
+Proporciona métodos para buscar artículos, obtener detalles de los autores y
+filtrar resultados por fecha de publicación.
 
 Autor: Roi Pereira Fiuza
-Fecha: 08/03/2024
 """
+
 import os
 import pandas as pd
 import numpy as np
 
-from Functions.API_metadata import extraccion_por_categorias
+from Functions.API_metadata import extraccion_por_categorias, filtrar_ayer
 from Functions.Docling_OCR import Archivo_to_OCR, Carga_Docling_OCR
 from Functions.PDF_descarga import PDF_descarga_temp
 from Functions.Florence_2_anotacion import  Carga_FLorence2_modelo
@@ -41,8 +42,8 @@ engine = engine_bbdd()
 # Diccionario para transformar los datos en funcion del id generado en la carga en la BBDD
 categorias_id_dict = carga_dimension_categorias(engine)
 
-# DF de los metadatos para la extraccion
-metadatos_publicaciones = extraccion_por_categorias(target_por_categoria)
+# DF de los metadatos para la extraccion, filtrados por el dia de ayer
+metadatos_publicaciones = filtrar_ayer(extraccion_por_categorias(target_por_categoria))
 
 # Normalizacion de los codigos de categorias en el id de la tabla CATEGORIA
 metadatos_publicaciones = normalizador_id_categoria_BBDD(metadatos_publicaciones, categorias_id_dict)
@@ -95,21 +96,3 @@ for publicacion in metadatos_publicaciones.itertuples():
 embeddings_df = pd.DataFrame(datos_embeddings_lst)
 
 embeddings_df.to_sql('embeddings', con=engine, if_exists='append', index=False)
-
-# ----------------------------------------------TESTEO
-#documento_dataset = Archivo_to_OCR(r'C:\Users\Usuario\OneDrive\UOC\TFG\Lervis\Lervis\2008.05746v1.pdf', doc_converter=doc_converter)
-#documento_enriquecido = enriquecimiento_doc(documento_dataset, F2_model, F2_processor)
-#embedding_denso, embedding_disperso = embedding(documento_enriquecido, model=modelo_BAAI)
-#print(embedding_denso)
-#print(embedding_disperso)
-
-
-
-
-
-
-             
-
-
-
-
