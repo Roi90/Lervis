@@ -8,9 +8,6 @@ Fecha: 11/03/2024
 
 from transformers import AutoProcessor, AutoModelForCausalLM  
 from PIL import Image
-import requests
-import copy
-from pathlib import Path
 import torch
 import time
 from Functions.Loggers import Florence_log

@@ -1,9 +1,7 @@
 
 from FlagEmbedding import BGEM3FlagModel
 from Functions.Loggers import BAAI_log
-
-# PENDIENTE DE DECIDIR SI GENERO CHUNKS O DEJO EL EMBEDDING EN SU TOTALIDAD
-# HAY QUE ANALIZAR
+from langchain_ollama import OllamaEmbeddings
 
 def embedding(text, model):
     """
@@ -42,3 +40,11 @@ def carga_BAAI():
 
     return model
 
+
+model = carga_BAAI()
+
+txt ='asasasasas'
+
+a,b = embedding(txt,model)
+print(a)
+print(b)
