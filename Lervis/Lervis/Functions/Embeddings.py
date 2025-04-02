@@ -2,6 +2,7 @@
 from FlagEmbedding import BGEM3FlagModel
 from Functions.Loggers import BAAI_log
 from langchain_ollama import OllamaEmbeddings
+import timeit
 
 def embedding(text, model):
     """
@@ -15,14 +16,16 @@ def embedding(text, model):
     """
 
     logger = BAAI_log()
-
-    embeddings = model.encode(text, return_dense=True,return_sparse=True,return_colbert_vecs=False,batch_size=12,max_length=6000)
-    logger.debug(f"Embeddings creados con exito")
+    try:
+        embeddings = model.encode(text, return_dense=True,return_sparse=True,return_colbert_vecs=False,batch_size=12,max_length=6000)
+        logger.debug(f"Embeddings creados con exito")
+    except Exception as e:
+        logger.error(f"Error al crear los embeddings: {e}")
 
     embeddings_denso = embeddings['dense_vecs']
     embedding_disperso = embeddings['lexical_weights']
 
-    return embeddings_denso, embedding_disperso
+    return embeddings_denso,embedding_disperso
 
 def carga_BAAI():
     """
@@ -40,11 +43,13 @@ def carga_BAAI():
 
     return model
 
+## TESTEO
 
-model = carga_BAAI()
+#model = carga_BAAI()
 
-txt ='asasasasas'
+#txt ='Most 3D object generators focus on aesthetic quality, often neglecting physical constraints necessary in applications.One such constraint is that the 3D object should be self-supporting, i.e., remains balanced under gravity.'
 
-a,b = embedding(txt,model)
-print(a)
-print(b)
+#a,b = embedding(txt,model)
+#tiempo = timeit.timeit(lambda: embedding(txt,model), number=10)
+#print(tiempo/10)
+#print(a)

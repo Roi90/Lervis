@@ -42,7 +42,7 @@ engine = engine_bbdd()
 # Diccionario para transformar los datos en funcion del id generado en la carga en la BBDD
 categorias_id_dict = carga_dimension_categorias(engine)
 
-# DF de los metadatos para la extraccion, filtrados por el dia de ayer
+# DF de los metadatos para la extraccion, <<< filtrados por el dia de ayer >>>>
 metadatos_publicaciones = filtrar_ayer(extraccion_por_categorias(target_por_categoria))
 
 # Normalizacion de los codigos de categorias en el id de la tabla CATEGORIA

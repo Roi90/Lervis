@@ -3,14 +3,20 @@ Este archivo contiene funciones para conectarse a una base de datos PostgreSQL.
 Proporciona métodos para crear un motor de conexión.
 
 Autor: Roi Pereira Fiuza
-Fecha: 08/03/2024
 """
 
 from sqlalchemy import create_engine
 from Static_data import categorias_arxiv
 import pandas as pd
+import numpy as np
 
-def engine_bbdd():
+import psycopg
+from psycopg.rows import dict_row
+
+# ---------------------------TO DO: Crear un archivo con las variables para seguridad
+# --------------------------- CREAR OBJETOS PARA MANEJAR LA BBDD
+# --------------------------- CREAR FUNCIONES EN POSTGRES PARA TRASLADAR EL CALCULO A LA BBDD.
+def conn_bbdd():
     """
     Crea y devuelve un motor de conexión a la base de datos PostgreSQL.
     La función utiliza una URL de conexión predefinida para conectarse a una base de datos PostgreSQL
@@ -18,47 +24,51 @@ def engine_bbdd():
     Returns:
         engine (sqlalchemy.engine.base.Engine): Motor de conexión a la base de datos.
     """
-
-
+    # ---------- GUARDAR SECRETOS EN UN ARHCIVO EXTERNO A ESTE ENTORNO
     # URL de conexión
     DATABASE_URL = "postgresql://postgres:Quiksilver90!@localhost:5432/Lervis"
-
     # Crear motor de conexión
-    engine = create_engine(DATABASE_URL)
+    #engine = create_engine(DATABASE_URL)
+    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
 
-    return engine
+    return conn
 
-def carga_dimension_categorias(engine):
+def carga_dimension_categorias(conn):
     """
-    Carga la dimensión de categorías en la base de datos.
-    Esta función toma un diccionario global `categorias_arxiv` que contiene códigos de categorías y sus descripciones,
-    y los inserta en una tabla llamada 'categoria' en la base de datos especificada por el parámetro `engine`.
+    Carga la dimensión de categorías en la base de datos usando psycopg.
     Args:
-        engine (sqlalchemy.engine.Engine): Conexión a la base de datos donde se insertarán los datos.
+        conn (psycopg.Connection): Conexión a la base de datos.
     Returns:
         dict: Diccionario con los códigos de categoría como claves y los IDs de la base de datos como valores.
     """
     categoria_dict = {}
-    df_structure = {
-        "codigo_categoria" : categorias_arxiv.keys(),
-        "categoria" : categorias_arxiv.values(),
-    }
-
-    df = pd.DataFrame(df_structure)
-    # Insercion de datos
-    df.to_sql('categoria', con=engine, if_exists='append', index=False)
-
-    query = "SELECT * FROM categoria"
-
-    # Extraccion de datos
-    categorias_df = pd.read_sql(query, con=engine)
-
-    for row in categorias_df.itertuples():
-        categoria_dict[row.codigo_categoria] = row.id
+    
+    # Convertir los datos a DataFrame
+    df = pd.DataFrame({
+        "codigo_categoria": list(categorias_arxiv.keys()),
+        "categoria": list(categorias_arxiv.values()),
+    })
+    
+    # Inserción de datos en la tabla 'categoria'
+    with conn.cursor() as cur:
+        for _, row in df.iterrows():
+            cur.execute(
+                """
+                INSERT INTO categoria (codigo_categoria, categoria)
+                VALUES (%s, %s);
+                """, (row["codigo_categoria"], row["categoria"])
+            )
+        conn.commit()
+    
+    # Extracción de datos para generar el diccionario
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, codigo_categoria FROM categoria;")
+        for row in cur.fetchall():
+            categoria_dict[row['codigo_categoria']] = row['id'] 
     
     return categoria_dict
 
-def carga_hechos_publicaciones(engine, df: pd.DataFrame):
+def carga_hechos_publicaciones(conn, df: pd.DataFrame):
     """
     Carga los hechos de publicaciones en la base de datos.
     Esta función toma un DataFrame `df` que contiene datos de publicaciones y los inserta en una tabla llamada 'publicaciones'
@@ -74,16 +84,25 @@ def carga_hechos_publicaciones(engine, df: pd.DataFrame):
     columnas_para_insercion = ['titulo', 'autores','fecha_publicacion',
                           'categoria_principal', 'categorias_lista', 'url_pdf', 'identificador_arxiv']
 
-    # Insercion de datos evitando la columna resumen
-    df[columnas_para_insercion].to_sql('publicaciones', con=engine, if_exists='append', index=False)
+     # Inserción de datos en la tabla 'publicaciones' usando psycopg
+    with conn.cursor() as cur:
+        for _, row in df[columnas_para_insercion].iterrows():
+            cur.execute(
+                """
+                INSERT INTO publicaciones (titulo, autores, fecha_publicacion, categoria_principal,
+                                           categorias_lista, url_pdf, identificador_arxiv)
+                VALUES (%s, %s, %s, %s, %s, %s, %s);
+                """,
+                (row['titulo'], row['autores'], row['fecha_publicacion'],
+                 row['categoria_principal'], row['categorias_lista'], row['url_pdf'], row['identificador_arxiv'])
+            )
+        conn.commit()
 
-    query = "SELECT id, identificador_arxiv FROM publicaciones"
-    
-    # Extraccion de datos
-    publicaciones_df = pd.read_sql(query, con=engine)
-
-    for row in publicaciones_df.itertuples():
-        publicaciones_dict[row.identificador_arxiv] = row.id
+    # Extracción de datos (id, identificador_arxiv) desde la tabla 'publicaciones'
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, identificador_arxiv FROM publicaciones;")
+        for row in cur.fetchall():
+            publicaciones_dict[row['identificador_arxiv']] = row['id']
     
     return publicaciones_dict
 
@@ -144,5 +163,33 @@ def normalizador_id_embeddings_BBDD(df: pd.DataFrame, diccionario: dict):
 
     return df[columnas_esperadas]
 
+def similitud_coseno(embedding_denso: np.array, engine, similitud:float):
+    """
+    Calcula la similitud del coseno entre dos vectores.
+    Esta función toma dos vectores y calcula la similitud del coseno entre ellos.
+    Returns:
+        float: Similitud del coseno entre los dos vectores.
+    """
+    # Queries para recuperar en funcion del embedding denso en funcion de dos parametros el embedding y el umbral de similitud
+    # En donde se recuperan los 5 documentos mas similares y se ordenan en funcion de las dos similitudes calculadas.
+    query = """
+        SELECT id_publicaciones, contenido, resumen,
+               1 - public.cosine_distance(contenido_emb_dense, :embedding_denso) AS similitud_contenido,
+               1 - public.cosine_distance(resumen_emb_dense, :embedding_denso) AS similitud_resumen
+        FROM embeddings
+        WHERE 1 - public.cosine_distance(contenido_emb_dense, :embedding_denso) > :similitud
+        OR 1 - public.cosine_distance(resumen_emb_dense, :embedding_denso) > :similitud
+        ORDER BY GREATEST(similitud_contenido, similitud_resumen) DESC
+        LIMIT 5;
+    """
+    documentos_recuperados = pd.read_sql(query, con=engine, params={"embedding_denso": embedding_denso.astype(np.float32).tolist(), "similitud": similitud})
+
+    if documentos_recuperados.empty:
+        return "No se si te he entendido bien, pero ¿Podrías detallar un poco mas tu pregunta?"
+
+        # Devolver el resumen del documento más relevante
+    return documentos_recuperados.iloc[0]['resumen']
+
+    
     
 
