@@ -5,16 +5,18 @@ Proporciona métodos para crear un motor de conexión.
 Autor: Roi Pereira Fiuza
 """
 
-from sqlalchemy import create_engine
 from Static_data import categorias_arxiv
 import pandas as pd
 import numpy as np
-
+import json
 import psycopg
 from psycopg.rows import dict_row
+from sqlalchemy import create_engine
+
+from Functions.Embeddings import carga_BAAI, embedding
 
 # ---------------------------TO DO: Crear un archivo con las variables para seguridad
-# --------------------------- CREAR OBJETOS PARA MANEJAR LA BBDD
+
 # --------------------------- CREAR FUNCIONES EN POSTGRES PARA TRASLADAR EL CALCULO A LA BBDD.
 def conn_bbdd():
     """
@@ -106,6 +108,27 @@ def carga_hechos_publicaciones(conn, df: pd.DataFrame):
     
     return publicaciones_dict
 
+def carga_hechos_embeddings(datos_embeddings_lst):
+    """
+    Inserta los datos de embeddings en la base de datos utilizando SQLAlchemy y pandas.
+    Se usa SQLAlchemy, debido a complicaciones en la insercion para el HSTORE.
+    
+    Args:
+        engine (sqlalchemy.engine.Engine): Conexión a la base de datos.
+        datos_embeddings_lst (list): Lista de diccionarios con los datos de embeddings.
+        
+    Returns:
+        None
+    """
+    # Crear el engine de conexión a PostgreSQL
+    engine = create_engine('postgresql://postgres:Quiksilver90!@localhost:5432/Lervis')
+    # Convertir la lista de diccionarios a un DataFrame
+    embeddings_df = pd.DataFrame(datos_embeddings_lst)
+    
+    # Insertar el DataFrame en la base de datos, tabla 'embeddings'
+    embeddings_df.to_sql('embeddings', con=engine, if_exists='append', index=False)
+    print("Embeddings insertados correctamente.")
+
 def normalizador_id_categoria_BBDD(df: pd.DataFrame, diccionario: dict):
     """
     Normaliza los IDs de las categorías en el DataFrame utilizando un diccionario de mapeo.
@@ -163,33 +186,53 @@ def normalizador_id_embeddings_BBDD(df: pd.DataFrame, diccionario: dict):
 
     return df[columnas_esperadas]
 
-def similitud_coseno(embedding_denso: np.array, engine, similitud:float):
+def similitud_coseno(embedding_denso: np.array, conn):
     """
-    Calcula la similitud del coseno entre dos vectores.
-    Esta función toma dos vectores y calcula la similitud del coseno entre ellos.
-    Returns:
-        float: Similitud del coseno entre los dos vectores.
-    """
-    # Queries para recuperar en funcion del embedding denso en funcion de dos parametros el embedding y el umbral de similitud
-    # En donde se recuperan los 5 documentos mas similares y se ordenan en funcion de las dos similitudes calculadas.
-    query = """
-        SELECT id_publicaciones, contenido, resumen,
-               1 - public.cosine_distance(contenido_emb_dense, :embedding_denso) AS similitud_contenido,
-               1 - public.cosine_distance(resumen_emb_dense, :embedding_denso) AS similitud_resumen
-        FROM embeddings
-        WHERE 1 - public.cosine_distance(contenido_emb_dense, :embedding_denso) > :similitud
-        OR 1 - public.cosine_distance(resumen_emb_dense, :embedding_denso) > :similitud
-        ORDER BY GREATEST(similitud_contenido, similitud_resumen) DESC
-        LIMIT 5;
-    """
-    documentos_recuperados = pd.read_sql(query, con=engine, params={"embedding_denso": embedding_denso.astype(np.float32).tolist(), "similitud": similitud})
+    Calcula la similitud del coseno entre un vector y los vectores almacenados en la base de datos.
+    Esta función toma un vector y calcula la similitud del coseno con los vectores de contenido y resumen
+    de los documentos almacenados en la base de datos.
 
-    if documentos_recuperados.empty:
-        return "No se si te he entendido bien, pero ¿Podrías detallar un poco mas tu pregunta?"
+    Args:
+        embedding_denso (np.array): Vector de embedding a comparar.
+        conn (psycopg2.connection): Conexión a la base de datos.
+        similitud (float): Umbral de similitud para filtrar los resultados.
+
+    Returns:
+        str: Resumen del documento más similar, o un mensaje si no hay resultados.
+    """
+
+    embedding_denso_float64 = embedding_denso.tolist()
+    with conn.cursor() as cur:
+
+        cur.execute("""
+                    SELECT id_publicaciones, contenido, resumen, 
+                        contenido_emb_dense <=> %s::vector AS similitud_contenido,
+                        resumen_emb_dense <=> %s::vector AS similitud_resumen
+                    FROM embeddings
+                    ORDER BY GREATEST(
+                    contenido_emb_dense <=> %s::vector, 
+                    resumen_emb_dense <=> %s::vector
+                    ) DESC
+                    LIMIT 5;
+                    """, (embedding_denso_float64, embedding_denso_float64, 
+                    embedding_denso_float64, 
+                    embedding_denso_float64
+                    ))
+        # Recuperar los resultados
+        documentos_recuperados = cur.fetchall()
+
+        if not documentos_recuperados:
+            return "No se si te he entendido bien, pero ¿Podrías detallar un poco mas tu pregunta?"
 
         # Devolver el resumen del documento más relevante
-    return documentos_recuperados.iloc[0]['resumen']
+        return (documentos_recuperados[0]['similitud_contenido'], 
+                documentos_recuperados[0]['similitud_resumen'], 
+                documentos_recuperados[0]['resumen'])
 
-    
-    
-
+# ------ TESTEO
+#conn =  conn_bbdd()
+#model = carga_BAAI()
+#txt = 'produces potential action, and then predicts the action outcomes'
+#embedding_denso, embedding_disperso = embedding(txt,model)
+#valor = similitud_coseno(embedding_denso, conn_bbdd())
+#print(valor[2])
