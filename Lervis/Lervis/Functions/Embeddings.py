@@ -47,7 +47,7 @@ def carga_BAAI():
 
 #model = carga_BAAI()
 
-#txt ='Most 3D object generators focus on aesthetic quality, often neglecting physical constraints necessary in applications.One such constraint is that the 3D object should be self-supporting, i.e., remains balanced under gravity.'
+#txt ='Most 3D object generators focus on aesthetic quality, often neglecting physical asdad asd sad asd constraints necessary in applications.One such constraint is that the 3D object should be self-supporting, i.e., remains balanced under gravity.'
 
 #a,b = embedding(txt,model)
 #tiempo = timeit.timeit(lambda: embedding(txt,model), number=10)
