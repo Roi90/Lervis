@@ -5,12 +5,14 @@ Autor: Roi Pereira Fiuza
 """
 import pandas as pd
 from langchain_ollama import OllamaLLM
+from langchain_postgres.vectorstores import PGVector
 from langchain_core.prompts import  ChatPromptTemplate 
 from Functions.Embeddings import carga_BAAI, embedding
-from Functions.BBDD_functions import engine_bbdd
+from Functions.BBDD_functions import conn_bbdd
 from Functions.Loggers import Llama31_chatbot_log
 from Functions.BBDD_functions import similitud_coseno
-
+from Functions.MarianMT_traductor import carga_modelo_traductor, translate_text
+from langdetect import detect
 
 def actualizacion_contexto(input_context: str, user_input: str, result: str):
     """
@@ -45,28 +47,36 @@ def actualizacion_informacion_inicial():
     """
     # Variable para almacenar la información inicial actualizada
     info_incial = ''
-    
+    conn =conn_bbdd()
     contextos = []
-    engine = engine_bbdd()
-
-    # Total de publicaciones por categorias
-    query = """SELECT categoria.categoria,
-                categoria.codigo_categoria,
-                COUNT(*) as Conteo_categorias
-                FROM publicaciones
-                LEFT JOIN categoria
-                    ON publicaciones.categoria_principal = categoria.id
-                GROUP BY categoria.categoria, categoria.codigo_categoria"""
-    categorias_df = pd.read_sql(query, con=engine)
-
+    
+    # Consulta SQL para obtener la información sobre las categorías y el conteo de publicaciones
+    query = """
+        SELECT categoria.categoria,
+               categoria.codigo_categoria,
+               COUNT(*) as conteo_categorias
+        FROM publicaciones
+        LEFT JOIN categoria
+            ON publicaciones.categoria_principal = categoria.id
+        GROUP BY categoria.categoria, categoria.codigo_categoria
+    """
+    
+    # Crear un cursor para ejecutar la consulta
+    with conn.cursor() as cur:
+        cur.execute(query)
+        categorias = cur.fetchall()
+    
     contextos.append('CATEGORIAS ARXIV')
-    for _, row in categorias_df.iterrows():
+    
+    # Iterar sobre los resultados obtenidos de la consulta
+    for row in categorias:
         contexto = f"Categoria: {row['categoria']} - Codigo Categoria: {row['codigo_categoria']} - Total publicaciones: {row['conteo_categorias']}"
-        # Se añade el contexto a la lista de contextos
         contextos.append(contexto)
-    contextos.append(f'Numero total de categorias: {len(categorias_df)}')
+    
+    contextos.append(f'Numero total de categorias: {len(categorias)}')
     contextos.append(f'Pagina web de arxiv: https://www.arxiv.org/')
-    # Apendicacion con formato de todos las categorias
+    
+    # Unir todos los contextos en un solo string con saltos de línea
     info_incial = "\n".join(contextos)
     
     return info_incial
@@ -74,12 +84,21 @@ def actualizacion_informacion_inicial():
 def chat(info_inicial: str, embedding_model):
 
     logger = Llama31_chatbot_log()
-    engine = engine_bbdd()
-
+    conn = conn_bbdd()
+    idioma_detectado = ''
     print("Lervis: Bienvenido a Lervis")
     context = ""
+
     while True:
         user_input = input("Usuario: ") # Input del usuario
+        # Deteccion del idioma
+        nuevo_idioma = detect(user_input)
+        
+        # Si el idioma ha cambiado, cargar el modelo de traducción correspondiente
+        if nuevo_idioma != idioma_detectado:
+            idioma_detectado = nuevo_idioma
+            traductor_model, traductor_tokenizer = carga_modelo_traductor(idioma_detectado)
+
         # Palabra clave para salir del chat en un futuro se identificara el cierre del browser por parte .
         if user_input == "exit": 
             print('Lervis: Un placer ayudarte, hasta pronto!')
@@ -88,7 +107,7 @@ def chat(info_inicial: str, embedding_model):
             # Si no hay contexto, se utiliza la información inicial como contexto
             # Se utiliza el invoke para asi anñadir el contexto que va creciendo en cada iteracion
             result = chain.invoke({"context": context,
-                                    "question": user_input,
+                                    "question":user_input ,
                                     "info_incial": info_inicial}) 
             # Se imprime la respuesta del modelo
             print("Lervis: ", result)
@@ -97,11 +116,16 @@ def chat(info_inicial: str, embedding_model):
         else:
 
             try:
+                # Traduccion al ingles para mejor resultado de similitud
+                user_input = translate_text(traductor_model, traductor_tokenizer, user_input)
                 # Embedding de la consulta del usuario
                 embedding_denso, _ = embedding(user_input, model=embedding_model)
                 # Recuperacion de documentos mediante similitud del coseno
-                resumen_recuperado = similitud_coseno(embedding_denso, engine, 0.6)
-                print(f'Lervis: {resumen_recuperado}')
+                resumen_recuperado = similitud_coseno(embedding_denso, conn)
+                result = chain.invoke({"context": context,
+                                    "question":resumen_recuperado[2] ,
+                                    "info_incial": info_inicial}) 
+                print("Lervis: ", result)
                 context = actualizacion_contexto(context, user_input, resumen_recuperado)
                 continue
             except Exception as e:
@@ -117,7 +141,7 @@ info_inicial = actualizacion_informacion_inicial()
 #-------------------------------------- Definimos el template para el prompt
 template = """
 Te llamas Lervis y eres un asistente experto en ciencias de la computación y un chat conversacional, especializado en analizar y resumir publicaciones académicas de arXiv.
-Mantén un tono amable, conciso y estructurado.
+Mantén un tono amable, conciso y estructurado. Solo saluda si el contexto esta vacio.
 
 Aqui esta el  contexto:
 {context}
