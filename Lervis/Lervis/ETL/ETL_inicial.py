@@ -4,6 +4,7 @@ de transformacion de los datos.
 
 Autor: Roi Pereira Fiuza
 """
+
 import os
 import pandas as pd
 import numpy as np
@@ -14,7 +15,7 @@ from Functions.PDF_descarga import PDF_descarga_temp
 from Functions.Florence_2_anotacion import  Carga_FLorence2_modelo
 from Functions.Enriquecimiento_documento import enriquecimiento_doc
 from Functions.Embeddings import carga_BAAI, embedding
-from Functions.BBDD_functions import conn_bbdd, carga_dimension_categorias, carga_hechos_publicaciones,  normalizador_id_categoria_BBDD
+from Functions.BBDD_functions import conn_bbdd, carga_dimension_categorias, carga_hechos_publicaciones,  normalizador_id_categoria_BBDD, carga_hechos_embeddings
 
 # Configurar la variable de entorno para la arquitectura CUDA de la RTX 3050 Laptop GPU
 os.environ["TORCH_CUDA_ARCH_LIST"] = "8.6"
@@ -27,11 +28,11 @@ target_por_categoria = 1
 
 #  ----------------- Carga de modelos
 # OCR
-#doc_converter = Carga_Docling_OCR()
+doc_converter = Carga_Docling_OCR()
 # Anotacion de imagenes
-#F2_model_id, F2_model, F2_processor = Carga_FLorence2_modelo()
+F2_model_id, F2_model, F2_processor = Carga_FLorence2_modelo()
 # Embeddings
-#modelo_BAAI = carga_BAAI()
+modelo_BAAI = carga_BAAI()
 
 # motor de bbdd
 conn = conn_bbdd()
@@ -90,9 +91,10 @@ for publicacion in metadatos_publicaciones.itertuples():
     datos_embeddings_lst.append(datos)
     break
 
-embeddings_df = pd.DataFrame(datos_embeddings_lst)
+carga_hechos_embeddings(datos_embeddings_lst)
+#embeddings_df = pd.DataFrame(datos_embeddings_lst)
 
-embeddings_df.to_sql('embeddings', con=engine, if_exists='append', index=False)
+#embeddings_df.to_sql('embeddings', con=engine, if_exists='append', index=False)
 
 # ----------------------------------------------TESTEO
 #documento_dataset = Archivo_to_OCR(r'C:\Users\Usuario\OneDrive\UOC\TFG\Lervis\Lervis\2008.05746v1.pdf', doc_converter=doc_converter)
