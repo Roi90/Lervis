@@ -1,5 +1,5 @@
 from transformers import MarianMTModel, MarianTokenizer
-from langdetect import detect
+
 
 def carga_modelo_traductor(src_lang="es"):
     """
