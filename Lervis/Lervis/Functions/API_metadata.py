@@ -83,9 +83,6 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='sub
                 "autores": autores.split(', '),
                 "resumen": str(entry.summary).replace('\n', ' ').strip(),
                 "fecha_publicacion": entry.published,
-                "anio": entry.published.split('-')[0],
-                "mes": entry.published.split('-')[1],
-                "dia": entry.published.split('-')[2],
                 # Se mantienen con el codigo de arxiv, ya que hay publicaciones que aparecen en otras categorias fuera de computer science
                 "categorias_lista": categorias,
                 # Convertir URL de abstract a URL de PDF
