@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Lervis Landing</title>
+  <!-- Enlace al CSS principal del proyecto -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- Estilos específicos para la landing con partículas, centrado y tipo máquina de escribir -->
+  <style>
+    body.landing-page { position: relative; margin: 0; height: 100vh; overflow: hidden; background-color: transparent; }
+    body.landing-page #particles-js { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-color: #020202; }
+    body.landing-page #landing { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; text-align: center; padding: 0 20px; }
+    body.landing-page #landing h1, body.landing-page #landing p { color: #ffffff; margin: 0.5em 0; white-space: pre; overflow: hidden; }
+    body.landing-page #landing a button { margin-top: 1em; padding: 0.75em 1.5em; font-size: 1rem; background-color: #005f5f; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+    body.landing-page #landing a button:hover { background-color: #007777; }
+  </style>
+</head>
+<body class="landing-page">
+  <div id="particles-js"></div>
+  <div id="landing">
+    <h1 id="typewriter" data-text=" Bienvenido a Lervis"></h1>
+    <p id="typewriter2" data-text="Un asistente experto en publicaciones de ciencias de la computacion."></p>
+    <a href="/chat"><button id="enter-btn" style="visibility:hidden;">Ir al chat</button></a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', function () {
+      particlesJS('particles-js', {
+        particles: { number: { value: 300 }, color: { value: '#ffffff' }, shape: { type: 'circle' }, opacity: { value: 0.2 }, size: { value: 3 },
+          line_linked: { enable: true, distance: 250, color: '#7DF9FF', opacity: 0.4, width: 0.5 }, move: { enable: true, speed: 2 }
+        },
+        interactivity: { detect_on: 'window', events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } }, modes: { repulse: { distance: 125, duration: 0.5 }, push: { particles_nb: 5 } } },
+        retina_detect: true
+      });
+
+      // Función para repulsar partículas a lo largo de la pantalla
+      function repulseAtProgress(progress) {
+        const x = progress * window.innerWidth;
+        const y = window.innerHeight / 2;
+        window.dispatchEvent(new MouseEvent('mousemove', { clientX: x, clientY: y, bubbles: true }));
+      }
+
+      // Función máquina de escribir con repulsión variable
+      function typeWriter(el, text, delay, callback) {
+        let i = 0;
+        const total = text.length;
+        function type() {
+          if (i < total) {
+            el.textContent += text.charAt(i);
+            // Repulsión desde la izquierda hasta la derecha
+            repulseAtProgress(i / (total - 1));
+            i++;
+            setTimeout(type, delay);
+          } else if (callback) {
+            callback();
+          }
+        }
+        el.textContent = '';
+        type();
+      }
+
+      const h1 = document.getElementById('typewriter');
+      const p = document.getElementById('typewriter2');
+      const btn = document.getElementById('enter-btn');
+      typeWriter(h1, h1.getAttribute('data-text'), 75, function() {
+        btn.style.visibility = 'visible';
+        typeWriter(p, p.getAttribute('data-text'), 50, function() {
+          
+        });
+      });
+    });
+  </script>
+</body>
+</html>

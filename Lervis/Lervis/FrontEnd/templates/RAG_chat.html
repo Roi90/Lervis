@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>RAG Chat </title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div id="top-bar">
+    <button id="reset-button"> ⚡ Nueva conversación</button>
+  </div>
+
+  <div id="chat-container">
+    <div id="chat-box"></div>
+    <div id="input-area">
+      <textarea id="user-input" placeholder="Escribe aqui..." autocomplete="off"></textarea>
+      <button id="send-button">Enviar</button>
+    </div>
+  </div>
+
+  <script>
+    // Efecto typewriter simple para texto plano (no recomendado para HTML)
+    function typeWriterSimple(el, text, delay = 50, callback) {
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          el.innerHTML += text.charAt(i);
+          i++;
+          setTimeout(type, delay);
+        } else if (callback) {
+          callback();
+        }
+      }
+      el.innerHTML = "";
+      type();
+    }
+
+    // Funciones auxiliares para typewriter respetando HTML marcado
+    function emptyTextNodes(node) {
+      node.childNodes.forEach(child => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          child.textContent = "";
+        } else {
+          emptyTextNodes(child);
+        }
+      });
+    }
+
+    const originals = [];
+    const targets   = [];
+    function collect(originalNode, cloneNode) {
+      originalNode.childNodes.forEach((childOrig, idx) => {
+        const childClone = cloneNode.childNodes[idx];
+        if (childOrig.nodeType === Node.TEXT_NODE) {
+          originals.push(childOrig.textContent);
+          targets.push(childClone);
+        } else {
+          collect(childOrig, childClone);
+        }
+      });
+    }
+
+    const input     = document.getElementById("user-input");
+    const chatBox   = document.getElementById("chat-box");
+    const sendButton = document.getElementById("send-button");
+
+    // Reiniciar conversación
+    document.getElementById("reset-button").addEventListener("click", async () => {
+      const res = await fetch("/reset", { method: "POST" });
+      if (res.ok) {
+        chatBox.innerHTML = "";
+        input.value = "";
+        input.style.height = "auto";
+      }
+    });
+
+    async function sendMessage() {
+      const message = input.value.trim();
+      if (!message) return;
+
+      // Mostrar mensaje del usuario
+      const userMsg = document.createElement("div");
+      userMsg.className = "message user";
+      userMsg.textContent = message;
+      chatBox.appendChild(userMsg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      input.value = "";
+
+      // Enviar al backend
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+
+      // Parsear Markdown a HTML
+      const html = marked.parse(data.response);
+
+      // Preparar árboles
+      const tmp   = document.createElement("div");
+      const clone = document.createElement("div");
+      tmp.innerHTML   = html;
+      clone.innerHTML = html;
+
+      emptyTextNodes(clone);
+      originals.length = 0;
+      targets.length   = 0;
+      collect(tmp, clone);
+
+      // Insertar clon vacío
+      const botMsg = document.createElement("div");
+      botMsg.className = "message bot";
+      botMsg.appendChild(clone);
+      chatBox.appendChild(botMsg);
+
+      // Animar texto respetando HTML
+      let nodeIndex = 0;
+      let charIndex = 0;
+      function typeStep() {
+        if (nodeIndex >= targets.length) {
+          chatBox.scrollTop = chatBox.scrollHeight;
+          return;
+        }
+        const text = originals[nodeIndex];
+        targets[nodeIndex].textContent = text.slice(0, charIndex + 1);
+        charIndex++;
+        if (charIndex >= text.length) {
+          nodeIndex++;
+          charIndex = 0;
+        }
+        chatBox.scrollTop = chatBox.scrollHeight;
+        setTimeout(typeStep, 20);
+      }
+      typeStep();
+    }
+
+    // Enviar con Enter (sin Shift)
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Enviar con clic en el botón
+    sendButton.addEventListener("click", sendMessage);
+
+    // Autogrow del textarea
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = input.scrollHeight + "px";
+    });
+  </script>
+</body>
+</html>
