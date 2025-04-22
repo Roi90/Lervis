@@ -11,8 +11,7 @@ import numpy as np
 from psycopg import sql
 import psycopg
 from psycopg.rows import dict_row
-
-from Functions.Embeddings import carga_BAAI, embedding
+from Functions.Loggers import Llama31_chatbot_log
 
 # ---------------------------TO DO: Crear un archivo con las variables para seguridad
 
@@ -205,7 +204,7 @@ def normalizador_id_embeddings_BBDD(df: pd.DataFrame, diccionario: dict):
 
 # ---------------------------- Recuperacion documentos y formateo para contexto
 
-def similitud_coseno(embedding_denso: np.array, conn)-> dict:
+def similitud_coseno(embedding_denso: np.array, conn, umbral_similitud, n_docs)-> dict:
     """
     Calcula la similitud del coseno entre un vector y los vectores almacenados en la base de datos.
     Esta función toma un vector y calcula la similitud del coseno con los vectores de contenido y resumen
@@ -218,20 +217,21 @@ def similitud_coseno(embedding_denso: np.array, conn)-> dict:
     Returns:
         list: Lista de documentos recuperados con sus similitudes.
     """
-
-    embedding_denso_float64 = embedding_denso.tolist()
+    logger = Llama31_chatbot_log()
+    embedding_list = embedding_denso.tolist()
     with conn.cursor() as cur:
-
+        logger.info("Consultando BBDD (SIMILITUD COSENO)")
         cur.execute("""
-                    SELECT id_publicaciones, chunk_emb_sparse, chunk,
+                    SELECT id, id_publicaciones, chunk_emb_sparse, chunk,
                         chunk_emb_dense <=> %s::vector AS similitud_contenido
                     FROM embeddings_chunks
+                    WHERE (chunk_emb_dense <=> %s::vector) >= %s
                     ORDER BY chunk_emb_dense <=> %s::vector DESC
-                    LIMIT 5;
-                    """, (embedding_denso_float64, embedding_denso_float64))
+                    LIMIT %s;
+                    """, (embedding_list, embedding_list, umbral_similitud, embedding_list, n_docs))
         # Recuperar los resultados
         documentos_recuperados = cur.fetchall()
-        #print(f"Total de registros en embeddings_chunks: {documentos_recuperados[0]}")
+        logger.info(f"Recuperados {len(documentos_recuperados)} documentos")
         
 
         if not documentos_recuperados:
@@ -277,20 +277,31 @@ def reranking(documentos_recuperados, embedding_disperso):
     df_temp['similitud_vocabulario'] = df_temp['chunk_emb_sparse'].apply(lambda x: len(set(x.keys()).intersection(set(embedding_disperso.keys()))))
     # Ordeno el DF por similitud de contenido y similitud de vocabulario
     df_temp = df_temp.sort_values(by=['similitud_contenido','similitud_vocabulario'], ascending=False)
-    
+    print(df_temp)
     return df_temp
 
-def formato_contexto_doc_recuperados(conn, df: pd.DataFrame, num_docs: int = 3) -> str:
-    """
-    Genera un contexto a partir de los documentos más relevantes.
-    
-    Args:
-        df (pd.DataFrame): DataFrame que contiene los documentos recuperados.
-        num_docs (int): Número de documentos a incluir en el contexto.
-        
-    Returns:
-        str: Contexto generado a partir de los documentos más relevantes.
-    """
+def formatear_metadata(doc):
+    return (
+        "\n**----------------------------**\n"
+        f"**Titulo**: {doc['titulo']}\n"
+        f"**Categoria**: {doc['categoria']}\n"
+        f"**Autores**:\n" + "\n".join(f"- {a}" for a in doc['autores'].split(",")) + "\n"
+        f"**Fecha de publicacion**: {doc['fecha_publicacion']}\n"
+        f"**URL de la publicacion**: {doc['url_pdf']}\n"
+        f"Resumen: {doc['resumen']}\n"
+        "**----------------------------**\n"
+    )
+
+def formatear_chunk(chunk):
+    return (
+        "\n**----Fragmento semantico Inicio----**\n"
+        f"{chunk}\n"
+        "**----Fragmento semantico Fin----**\n"
+    )
+
+def formato_contexto_doc_recuperados(urls_usados, conn, df: pd.DataFrame, num_docs: int = 2) -> str:
+
+
     documentos_formateados = ''
 
     if num_docs > len(df):
@@ -299,10 +310,14 @@ def formato_contexto_doc_recuperados(conn, df: pd.DataFrame, num_docs: int = 3) 
         # Subconjunto de documentos recuperados
         df_top_docs = df.head(num_docs)
         # Extraer los IDs de los documentos
-        ids = list(df_top_docs['id_publicaciones'])
+        id_publicaciones = list(set(df_top_docs['id_publicaciones']))
+        # Extraer los ID de los Chunks
+        id_chunks = list(set(df_top_docs['id']))
+        # Formateo para correcta ejecucion de cur.execute
+        params = tuple(id_publicaciones)
         # Formateo para poder introducir una tupla (%s, %s, %s...)
-        placeholders = sql.SQL(', ').join([sql.Placeholder() for _ in ids])
-
+        placeholders_id_publicaciones = sql.SQL(', ').join([sql.Placeholder() for _ in id_publicaciones])
+        
         with conn.cursor() as cur:
             query = sql.SQL("""SELECT 
                         titulo,
@@ -316,26 +331,27 @@ def formato_contexto_doc_recuperados(conn, df: pd.DataFrame, num_docs: int = 3) 
                             ON publicaciones.categoria_principal = CAT.id
                         LEFT JOIN embeddings_resumen as ER
                             ON publicaciones.id = ER.id_publicaciones
-                        WHERE publicaciones.id in ({})""").format(placeholders)
-            cur.execute(query, ids)
+                        WHERE publicaciones.id in ({})""").format(placeholders_id_publicaciones)
+            cur.execute(query, params)
             # Recuperar los resultados (Lista de diccionarios)
             documentos_recuperados = cur.fetchall()
-        # generacion del formato de la respuesta
+        # Formateo e insercion de los chunks y metadatos para el contexto
+        docs_insertados = 0
         for doc in documentos_recuperados:
-            # Titulo
-            documentos_formateados += f"\nTitulo: {doc['titulo']}\n"
-            # Categoria
-            documentos_formateados += f"Categoria: {doc['categoria']}\n"
-            # Autores
-            documentos_formateados += f"Autores: {doc['autores']}\n".replace("{", "").replace("}", "")
-            # Fecha de publicacion
-            documentos_formateados += f"Fecha de publicacion: {doc['fecha_publicacion']}\n"
-            # URL PDF
-            documentos_formateados += f"URL PDF: {doc['url_pdf']}\n"
-            # Resumen
-            documentos_formateados += f"Resumen: {doc['resumen']}\n"
-            # Separador entre documentos
-            documentos_formateados += "-" * 80 + "\n"
+            # Se usa la secuencia del DF que esta ordenado
+            url   = doc['url_pdf'].strip()
+
+            # Compruebo que no se ha insertado para evitar duplicacion de metadatos.
+            if url not in urls_usados:
+                if docs_insertados == num_docs:
+                    break
+                    
+                else:
+                    # Nuevo documento: metadata
+                    urls_usados.add(url)
+                    documentos_formateados += formatear_metadata(doc)
+                    docs_insertados += 1
+
         return documentos_formateados
 
 
@@ -347,105 +363,105 @@ def temporalidad_a_SQL(conn, temporalidad: tuple):
     Returns:
         str: Consulta SQL generada a partir de la temporalidad.
     """
-    print(temporalidad)
+    logger = Llama31_chatbot_log()
     if temporalidad != None:
         # Identificacion de agregados
-        expresiones_count = ["cuantas", "numero de", "total de", "cantidad de", "que cantidad","suma de"]
+        #expresiones_count = ["cuantas", "numero de", "total de", "cantidad de", "que cantidad","suma de"]
         
-        expresiones_agregados = ["promedio de", "media de"]
+        #regex_count = r'\b(?:' + '|'.join(expresiones_count) + r')\b'
 
-        regex_count = r'\b(?:' + '|'.join(expresiones_count) + r')\b'
-
-        if re.findall(regex_count, temporalidad[2]):
+        #if re.findall(regex_count, temporalidad[2]):
             
-            if temporalidad[0] == 'Combinada':
-                # Extraigo los meses y años del diccionario
-                meses_list = temporalidad[1]['Meses']   #  [1, 2, 3]
-                anios_list = temporalidad[1]['Anios']   #  [2023, 2024]
+        if temporalidad[0] == 'Combinada':
+            # Extraigo los meses y años del diccionario
+            meses_list = temporalidad[1]['Meses']   #  [1, 2, 3]
+            anios_list = temporalidad[1]['Anios']   #  [2023, 2024]
 
-                # Genero los Composed de "%s, %s, %s" para cada lista
-                mes_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in meses_list)
-                anio_ph = sql.SQL(', ').join(sql.Placeholder() for _ in anios_list)
+            # Genero los Composed de "%s, %s, %s" para cada lista
+            mes_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in meses_list)
+            anio_ph = sql.SQL(', ').join(sql.Placeholder() for _ in anios_list)
 
-                # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
-                query = sql.SQL("""
-                    SELECT COUNT(*) AS conteo_publicaciones
-                    FROM publicaciones
-                    WHERE MES  IN ({meses})
-                    AND ANIO IN ({anios});
-                """).format( 
-                    meses=mes_ph,  # Insercion de los placeholders de meses
-                    anios=anio_ph # Insercion de los placeholders de anios
-                )
-                # Preparo la tupla de parámetros con los valores reales
-                params = tuple(meses_list) + tuple(anios_list)
+            # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
+            query = sql.SQL("""
+                SELECT COUNT(*) AS conteo_publicaciones
+                FROM publicaciones
+                WHERE MES  IN ({meses})
+                AND ANIO IN ({anios});
+            """).format( 
+                meses=mes_ph,  # Insercion de los placeholders de meses
+                anios=anio_ph # Insercion de los placeholders de anios
+            )
+            # Preparo la tupla de parámetros con los valores reales
+            params = tuple(meses_list) + tuple(anios_list)
+            logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
+            with conn.cursor() as cur:
+                cur.execute(query, params) # En esta llamada se rellenan los placeholders
+                result = cur.fetchone()
+                return result['conteo_publicaciones']
+        
+        elif temporalidad[0] == 'Mes': # Fomato en lista
 
-                with conn.cursor() as cur:
-                    cur.execute(query, params) # En esta llamada se rellenan los placeholders
-                    result = cur.fetchone()
-                    return result
+            meses_list = temporalidad[1]
+            # Genero los Composed de "%s, %s, %s" para la lista
+            mes_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in meses_list)
+
+            # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
+            query = sql.SQL("""
+                SELECT COUNT(*) AS conteo_publicaciones
+                FROM publicaciones
+                WHERE MES  IN ({meses});
+            """).format( 
+                meses=mes_ph,  # Insercion de los placeholders de meses
+            )
+            # Preparo la tupla de parámetros con los valores reales
+            params = tuple(meses_list)
+            logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
+            with conn.cursor() as cur:
+                cur.execute(query, params) # En esta llamada se rellenan los placeholders
+                result = cur.fetchone()
+                return result['conteo_publicaciones']
             
-            elif temporalidad[0] == 'Mes': # Fomato en lista
+        elif temporalidad[0] == 'Anio': # Fomato en lista
 
-                meses_list = temporalidad[1]
-                # Genero los Composed de "%s, %s, %s" para la lista
-                mes_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in meses_list)
+            anios_list = temporalidad[1]
+            # Genero los Composed de "%s, %s, %s" para la lista
+            anios_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in anios_list)
 
-                # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
-                query = sql.SQL("""
-                    SELECT COUNT(*) AS conteo_publicaciones
-                    FROM publicaciones
-                    WHERE MES  IN ({meses});
-                """).format( 
-                    meses=mes_ph,  # Insercion de los placeholders de meses
-                )
-                # Preparo la tupla de parámetros con los valores reales
-                params = tuple(meses_list) 
-                with conn.cursor() as cur:
-                    cur.execute(query, params) # En esta llamada se rellenan los placeholders
-                    result = cur.fetchone()
-                    return result
-                
-            elif temporalidad[0] == 'Anio': # Fomato en lista
-
-                anios_list = temporalidad[1]
-                # Genero los Composed de "%s, %s, %s" para la lista
-                anios_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in anios_list)
-
-                # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
-                query = sql.SQL("""
-                    SELECT COUNT(*) AS conteo_publicaciones
-                    FROM publicaciones
-                    WHERE ANIO  IN ({anios});
-                """).format( 
-                    anios=anios_ph,  # Insercion de los placeholders de anios
-                )
-                # Preparo la tupla de parámetros con los valores reales
-                params = tuple(anios_list) 
-                with conn.cursor() as cur:
-                    cur.execute(query, params) # En esta llamada se rellenan los placeholders
-                    result = cur.fetchone()
-                    return result
+            # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
+            query = sql.SQL("""
+                SELECT COUNT(*) AS conteo_publicaciones
+                FROM publicaciones
+                WHERE ANIO  IN ({anios});
+            """).format( 
+                anios=anios_ph,  # Insercion de los placeholders de anios
+            )
+            # Preparo la tupla de parámetros con los valores reales
+            params = tuple(anios_list) 
+            logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
+            with conn.cursor() as cur:
+                cur.execute(query, params) # En esta llamada se rellenan los placeholders
+                result = cur.fetchone()
+                return result['conteo_publicaciones']
+        
+        # Expresiones temporales   
+        elif temporalidad[0] == 'EXP': # Fomato en lista
             
-            # Expresiones temporales   
-            elif temporalidad[0] == 'EXP': # Fomato en lista
-                
-                exp_dias = int(temporalidad[1])
-                # Genero los Composed de "%s, %s, %s"
-                #exp_ph  = sql.SQL(', ').join(exp_list)
+            exp_dias = int(temporalidad[1])
+            # Genero los Composed de "%s, %s, %s"
+            #exp_ph  = sql.SQL(', ').join(exp_list)
 
-                # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
-                # Se usan los dias para sustraer a la fecha de la consulta.
-                query = """
-                    SELECT COUNT(*) AS conteo_publicaciones
-                    FROM publicaciones
-                    WHERE fecha_publicacion = CURRENT_DATE - %s;
-                """
-    
-                with conn.cursor() as cur:
-                    cur.execute(query, (exp_dias,)) # Creacion de tupla por psycopg
-                    result = cur.fetchone()
-                    return result    
+            # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
+            # Se usan los dias para sustraer a la fecha de la consulta.
+            query = """
+                SELECT COUNT(*) AS conteo_publicaciones
+                FROM publicaciones
+                WHERE fecha_publicacion = CURRENT_DATE - %s;
+            """
+            logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
+            with conn.cursor() as cur:
+                cur.execute(query, (exp_dias,)) # Creacion de tupla por psycopg
+                result = cur.fetchone()
+                return result['conteo_publicaciones']
 
 
         return None
@@ -464,3 +480,4 @@ def temporalidad_a_SQL(conn, temporalidad: tuple):
 #doc_format = formato_contexto_doc_recuperados(conn, df_temp, num_docs=3)
 
 #print(doc_format)
+

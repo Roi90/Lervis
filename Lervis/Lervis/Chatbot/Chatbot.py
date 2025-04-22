@@ -1,37 +1,36 @@
-from Functions.Chatbot_functions import actualizacion_informacion_inicial, chat
-from langchain_ollama import OllamaLLM
-from langchain_core.prompts import  ChatPromptTemplate 
+from datetime import datetime
+from Functions.Chatbot_functions import  RAG_chat, actualizacion_informacion_inicial, eliminacion_acentos
 from Functions.Embeddings import carga_BAAI
+from Functions.Loggers import Llama31_chatbot_log
+from Functions.BBDD_functions import conn_bbdd
+from Functions.MarianMT_traductor import carga_modelo_traductor
 
 
-info_inicial = actualizacion_informacion_inicial()
-
-#-------------------------------------- Definimos el template para el prompt
-template = """
-Te llamas Lervis y eres un asistente experto en ciencias de la computación y un chat conversacional, especializado en analizar y resumir publicaciones académicas de arXiv.
-Mantén un tono amable, conciso y estructurado. Solo saluda si el contexto esta vacio.
-
-Aqui esta el  contexto:
-{context}
---- Información adicional ---
-{info_incial}
-Pregunta:
-{question}
-Respuesta:
-
-"""
+logger = Llama31_chatbot_log()
+conn = conn_bbdd()
 modelo_BAAI = carga_BAAI()
+info_inicial = actualizacion_informacion_inicial()
+traductor_model, traductor_tokenizer = carga_modelo_traductor()
 
-modelo = OllamaLLM(model ="llama3.1") 
-# Query al modelo con el template
-prompt = ChatPromptTemplate.from_template(template) 
-# Estos chains reflejan el flujo de interaccion entre el modelo y su entrada, en este caso el prompt del usuario que se inyecta en el modelo y se obtiene una respuesta
-chain = prompt | modelo 
+urls_usados   = set()
 
-chat(info_inicial, modelo_BAAI, chain)
+if __name__ == '__main__':
+    
+       
+    while True:
+        user_input=eliminacion_acentos(input("User: "))
+        # Variable para introducir el tiempo y dia de la conversacion
+        ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
+        respuesta, context =RAG_chat(
+            user_input=user_input,
+            context=context,
+            info_inicial=info_inicial,
+            logger=logger,
+            conn=conn,
+            embedding_model=modelo_BAAI,
+            traductor_model =traductor_model,
+            traductor_tokenizer=traductor_tokenizer,
+            ahora=ahora,
+            urls_usados=urls_usados)
 
-#input_user = 'Total de publicaciones que han salido ayer'
-#tupla = deteccion_temporalidad(input_user)
-#print(tupla[2])
-#calculos =  temporalidad_a_SQL(conn_bbdd(), tupla)
-#print(calculos)
+        
