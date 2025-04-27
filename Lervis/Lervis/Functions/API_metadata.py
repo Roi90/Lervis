@@ -11,7 +11,7 @@ import requests
 from Functions.Loggers import extraccion_metadatos_log
 import feedparser
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from tqdm import tqdm
 
 def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='submittedDate', orden_descendente=True):
@@ -107,7 +107,7 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='sub
         logger.error(f"Error inesperado durante la extracción: {e}", exc_info=True)
         return pd.DataFrame()
     
-def extraccion_por_categorias(max_resultados=1000):
+def extraccion_por_categorias(conn, max_resultados=1000):
     """
     Ejecuta la función extraer_publicaciones_arxiv iterando por todas las categorías definidas en categorias_arxiv.
         
@@ -133,7 +133,33 @@ def extraccion_por_categorias(max_resultados=1000):
 
     # Concatenacion
     df_metadata_total = pd.concat(df_lst, ignore_index=True)
+    # ----- Se eliminan posibles duplicados ------
+    try:
+        id_insertados_lst = consulta_id_arxiv(conn)
+    except Exception as e:
+        logger.error(f"Error al consultar la base de datos: {e}")
+        id_insertados_lst = []
+    # Se filtra el DataFrame para eliminar los registros que ya están en la base de datos
+    df_metadata_total = df_metadata_total[~df_metadata_total['identificador_arxiv'].isin(id_insertados_lst)]
+
     return df_metadata_total
+
+
+# ----- Funciones para filtrado en la extraccion ------
+def consulta_id_arxiv(conn) -> list:
+    """
+    Recupera una lista de identificadores de arXiv desde la base de datos.
+
+    Args:
+        conn (psycopg.Connection): Conexión a la base de datos.
+
+    Returns:
+        list: Lista de identificadores de arXiv únicos presentes en la base de datos.
+    """
+    with conn.cursor() as cur:
+        cur.execute("SELECT identificador_arxiv FROM publicaciones;")
+        result = cur.fetchall()
+    return list(set([row['identificador_arxiv'] for row in result]))
 
 def filtrar_ayer(df: pd.DataFrame):
     """
