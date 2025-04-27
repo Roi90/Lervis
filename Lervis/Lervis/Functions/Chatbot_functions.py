@@ -67,17 +67,17 @@ def actualizacion_informacion_inicial():
     # Variable para almacenar la información inicial actualizada
     info_incial = ''
     conn =conn_bbdd()
-    contextos = []
+
     
     # Consulta SQL para obtener la información sobre las categorías y el conteo de publicaciones
     query = """
-        SELECT categoria.categoria,
-               categoria.codigo_categoria,
+        SELECT 
+               MIN(publicaciones.fecha_publicacion) as fecha_minima,
+               MAX(publicaciones.fecha_publicacion) as fecha_maxima,
                COUNT(*) as conteo_categorias
         FROM publicaciones
         LEFT JOIN categoria
             ON publicaciones.categoria_principal = categoria.id
-        GROUP BY categoria.categoria, categoria.codigo_categoria
     """
     
     # Crear un cursor para ejecutar la consulta
@@ -85,19 +85,18 @@ def actualizacion_informacion_inicial():
         cur.execute(query)
         categorias = cur.fetchall()
     
-    contextos.append('CATEGORIAS ARXIV')
+    ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
+    info_incial += f'{ahora} -- Categorias disponibles en la base de datos--\n\n'
     
     # Iterar sobre los resultados obtenidos de la consulta
-    for row in categorias:
-        contexto = f"Category: {row['categoria']} -Category code : {row['codigo_categoria']} - Total Publications: {row['conteo_categorias']}"
-        contextos.append(contexto)
-    
-    contextos.append(f'Total number of categories: {len(categorias)}')
-    contextos.append(f'arXiv website: https://www.arxiv.org/')
-    
-    # Unir todos los contextos en un solo string con saltos de línea
-    info_incial = "\n".join(contextos)
-    
+    #for row in categorias:
+    #    info_incial += f"Categoria: {row['categoria']} - Cantidad: {row['conteo_categorias']}\n"
+        
+    info_incial += f"Fecha minima de publicacion: {categorias[0]['fecha_minima']}\n"
+    info_incial += f"Fecha maxima de publicacion: {categorias[0]['fecha_maxima']}\n"
+    info_incial += f"Cantidad total de categorias: {categorias[0]['conteo_categorias']}\n"
+    info_incial += f"Pagina web de ArXiv: https://www.arxiv.org/\n"
+        
     return info_incial
 
 def deteccion_temporalidad(user_input: str):
@@ -178,71 +177,36 @@ def deteccion_temporalidad(user_input: str):
 
 def deteccion_intencion(user_input: str) -> str:
     system_prompt = (
-        "Eres un clasificador cuya única función es decidir entre dos intenciones:\n"
-        "- consultar  → el usuario quiere consultar la base de datos.\n"
-        "- hablar      → el usuario quiere sólo una respuesta conversacional.\n\n"
-        "RESPONDE **SIEMPRE** estrictamente con un JSON así:\n"
-        "{ \"intencion\": \"consultar\" }\n"
-        "o\n"
-        "{ \"intencion\": \"hablar\" }\n"
-        "¡SIN NADA MAS Y SIN ACENTOS NI NADA! Unicamente usa la clave 'intencion'.\n\n"
-    )
+    "Eres un clasificador cuya única función es decidir entre dos intenciones:\n\n"
+    "- consultar → El usuario quiere consultar, buscar, recuperar o encontrar información en la base de datos. "
+    "Usa 'consultar' si detectas verbos como consultar, buscar, encontrar, obtener, recuperar, listar, acceder, "
+    "investigar, explorar o similares.\n"
+    "- hablar → El usuario sólo quiere una respuesta conversacional sin necesidad de acceder a la base de datos.\n\n"
+    "Debes RESPONDER **SIEMPRE** estrictamente con un JSON como uno de estos:\n"
+    "{ \"intencion\": \"consultar\" }\n"
+    "o\n"
+    "{ \"intencion\": \"hablar\" }\n\n"
+    "¡SIN NADA MÁS Y SIN ACENTOS NI COMENTARIOS! Únicamente responde con la clave \"intencion\"."
+)
     full_prompt = f"{system_prompt}\n\nUsuario: {user_input}\nClasificación:"
 
-    url = "http://localhost:11434/api/generate"
-    data = {
-        "model": "llama3.1",
-        "prompt": full_prompt,
-        "stream": True
-    }
-
-    respuesta_completa = ""
-    with requests.post(url, json=data, stream=True) as r:
-        for line in r.iter_lines():
-            if line:
-                try:
-                    fragment = json.loads(line.decode("utf-8"))
-                    token = fragment.get("response", "")
-                    #print(token, end="", flush=True)
-                    respuesta_completa += token
-                except json.JSONDecodeError:
-                    continue
-
-    # ✅ Ahora parseamos el texto como JSON real
     try:
-        respuesta_json = json.loads(respuesta_completa)
+        response = chat(
+            model="llama3.1",
+            messages=[{"role": "user", "content": full_prompt}],
+            stream=False  # ❗️NO streaming
+        )
+
+        texto_respuesta = response["message"]["content"]
+
+        # Parseamos el JSON de la respuesta
+        respuesta_json = json.loads(texto_respuesta)
+        print(f"🟢 Intencion: {respuesta_json}")
         return respuesta_json.get("intencion", "hablar")
-    except json.JSONDecodeError:
-        print("\nERROR: No se pudo parsear la intención:", respuesta_completa)
+    except (KeyError, json.JSONDecodeError) as e:
+        print(f"❌ Error detectando intención: {e}")
         return "hablar"
 
-def Llama3_1_API2(prompt):
-    url = "http://localhost:11434/api/generate"
-    data = {
-        "model": "llama3.1",
-        "prompt": prompt,
-        "stream": True,
-        "raw": False
-    }
-
-    respuesta_completa = ""
-
-    with requests.post(url, json=data, stream=True) as r:
-        for line in r.iter_lines():
-            if line:
-                try:
-                    fragment = json.loads(line.decode("utf-8"))
-                    token = fragment.get("response", "")
-                    print(token, end="", flush=True)
-                    respuesta_completa += token
-                    # Envio del token en modo streaming.
-                    yield token
-
-                except json.JSONDecodeError:
-                    continue
-
-    #  Marcar final (opcional, para el backend)
-    yield f"<--FIN-->{respuesta_completa}"
 
 def Llama3_1_API(prompt):
     # Utiliza la API local.
@@ -253,8 +217,6 @@ def Llama3_1_API(prompt):
     )
 
     for part in stream:
-        # part['message']['content'] contiene el chunk de texto
-        #print(part["message"]["content"], end="", flush=True)
         yield part["message"]["content"]
 
 
