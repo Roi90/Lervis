@@ -2,156 +2,137 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>RAG Chat </title>
+  <title>RAG Chat</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    marked.setOptions({ breaks: true });
+  </script>
 </head>
 <body>
   <div id="top-bar">
-    <button id="reset-button"> ⚡ Nueva conversación</button>
+    <button id="reset-button">⚡ Nueva conversación ⚡</button>
   </div>
-
   <div id="chat-container">
     <div id="chat-box"></div>
     <div id="input-area">
-      <textarea id="user-input" placeholder="Escribe aqui..." autocomplete="off"></textarea>
+      <textarea id="user-input" placeholder="Escribe aquí..."></textarea>
       <button id="send-button">Enviar</button>
     </div>
   </div>
 
   <script>
-    // Efecto typewriter simple para texto plano (no recomendado para HTML)
-    function typeWriterSimple(el, text, delay = 50, callback) {
-      let i = 0;
-      function type() {
-        if (i < text.length) {
-          el.innerHTML += text.charAt(i);
-          i++;
-          setTimeout(type, delay);
-        } else if (callback) {
-          callback();
-        }
-      }
-      el.innerHTML = "";
-      type();
-    }
+    window.onload = () => {
+      // referencias a los elementos del DOM
+      const resetBtn = document.getElementById("reset-button");
+      const input = document.getElementById("user-input");
+      const chatBox = document.getElementById("chat-box");
+      const sendButton = document.getElementById("send-button");
 
-    // Funciones auxiliares para typewriter respetando HTML marcado
-    function emptyTextNodes(node) {
-      node.childNodes.forEach(child => {
-        if (child.nodeType === Node.TEXT_NODE) {
-          child.textContent = "";
-        } else {
-          emptyTextNodes(child);
+      resetBtn.addEventListener("click", async () => {
+        console.log("🔵 Botón de reset pulsado");
+        const res = await fetch("/reset", { method: "POST" });
+        if (res.ok) {
+          console.log("🟢 Sesión reseteada correctamente");
+          chatBox.innerHTML = "";
+          input.value = "";
         }
       });
-    }
 
-    const originals = [];
-    const targets   = [];
-    function collect(originalNode, cloneNode) {
-      originalNode.childNodes.forEach((childOrig, idx) => {
-        const childClone = cloneNode.childNodes[idx];
-        if (childOrig.nodeType === Node.TEXT_NODE) {
-          originals.push(childOrig.textContent);
-          targets.push(childClone);
-        } else {
-          collect(childOrig, childClone);
-        }
-      });
-    }
+      async function readStream(reader, decoder, content, chatBox) {
+        console.log("🟠 Empezando a leer el stream...");
+        let chunkTotal = "";
 
-    const input     = document.getElementById("user-input");
-    const chatBox   = document.getElementById("chat-box");
-    const sendButton = document.getElementById("send-button");
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            console.log("🟢 Stream terminado");
+            break;
+          }
 
-    // Reiniciar conversación
-    document.getElementById("reset-button").addEventListener("click", async () => {
-      const res = await fetch("/reset", { method: "POST" });
-      if (res.ok) {
-        chatBox.innerHTML = "";
-        input.value = "";
-        input.style.height = "auto";
-      }
-    });
-
-    async function sendMessage() {
-      const message = input.value.trim();
-      if (!message) return;
-
-      // Mostrar mensaje del usuario
-      const userMsg = document.createElement("div");
-      userMsg.className = "message user";
-      userMsg.textContent = message;
-      chatBox.appendChild(userMsg);
-      chatBox.scrollTop = chatBox.scrollHeight;
-      input.value = "";
-
-      // Enviar al backend
-      const res = await fetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message })
-      });
-      const data = await res.json();
-
-      // Parsear Markdown a HTML
-      const html = marked.parse(data.response);
-
-      // Preparar árboles
-      const tmp   = document.createElement("div");
-      const clone = document.createElement("div");
-      tmp.innerHTML   = html;
-      clone.innerHTML = html;
-
-      emptyTextNodes(clone);
-      originals.length = 0;
-      targets.length   = 0;
-      collect(tmp, clone);
-
-      // Insertar clon vacío
-      const botMsg = document.createElement("div");
-      botMsg.className = "message bot";
-      botMsg.appendChild(clone);
-      chatBox.appendChild(botMsg);
-
-      // Animar texto respetando HTML
-      let nodeIndex = 0;
-      let charIndex = 0;
-      function typeStep() {
-        if (nodeIndex >= targets.length) {
+          let chunk = decoder.decode(value, { stream: true });
+          //console.log("🧩 Chunk recibido:", chunk);
+          chunkTotal += chunk;
+          content.textContent = chunkTotal;
           chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        console.log("🟡 Texto final acumulado del stream:", chunkTotal);
+        return chunkTotal;
+      }
+
+      async function sendMessage() {
+        const message = input.value.trim();
+        if (!message) {
+          console.log("⚪ Input vacío, no se envía nada");
           return;
         }
-        const text = originals[nodeIndex];
-        targets[nodeIndex].textContent = text.slice(0, charIndex + 1);
-        charIndex++;
-        if (charIndex >= text.length) {
-          nodeIndex++;
-          charIndex = 0;
-        }
+
+        console.log("🔵 Enviando mensaje:", message);
+
+        const userMsg = document.createElement("div");
+        userMsg.className = "message user";
+        userMsg.textContent = message;
+        chatBox.appendChild(userMsg);
+        input.value = "";
+
+        const botMsg = document.createElement("div");
+        botMsg.className = "message bot";
+        const content = document.createElement("div");
+        botMsg.appendChild(content);
+        chatBox.appendChild(botMsg);
         chatBox.scrollTop = chatBox.scrollHeight;
-        setTimeout(typeStep, 20);
+
+        try {
+          console.log("🟠 Haciendo fetch a /chat...");
+          const res = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+          });
+
+          console.log("🟢 Conexión establecida con /chat, empezando stream");
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+
+          const chunkTotal = await readStream(reader, decoder, content, chatBox);
+
+          if (chunkTotal.trim() !== "") {
+            console.log("🟢 Texto recibido, enviando a /save_context...");
+            await fetch("/save_context", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ mensaje_usuario: message,
+                                    respuesta_lervis: chunkTotal })
+            });
+            console.log("✅ Guardado exitoso en /save_context");
+          } else {
+            console.warn("⚠️ No hay texto acumulado para enviar a /save_context");
+          }
+
+          const formatted = chunkTotal
+            .replace(/\r?\n\r?\n/g, '\n\n')
+            .replace(/([^\n])\n(?=[^\n])/g, '$1  \n');
+          const markdownFormatted = marked.parse(formatted);
+          content.innerHTML = markdownFormatted;
+
+          console.log("✅ Respuesta formateada y renderizada");
+
+        } catch (error) {
+          console.error("❌ Error en sendMessage:", error);
+          content.innerText = error;
+        }
       }
-      typeStep();
-    }
 
-    // Enviar con Enter (sin Shift)
-    input.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
 
-    // Enviar con clic en el botón
-    sendButton.addEventListener("click", sendMessage);
-
-    // Autogrow del textarea
-    input.addEventListener("input", () => {
-      input.style.height = "auto";
-      input.style.height = input.scrollHeight + "px";
-    });
+      sendButton.addEventListener("click", sendMessage);
+    };
   </script>
 </body>
 </html>

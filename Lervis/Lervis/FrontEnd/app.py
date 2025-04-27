@@ -1,22 +1,45 @@
 from datetime import datetime, timedelta
-from flask import Flask, request, render_template, jsonify, session
-import os
-import sys
+from flask import Flask, Response, request, render_template, stream_with_context, session
+from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
 
-sys.path.append(  # añade una ruta a las rutas que Python usa para buscar módulos
-    os.path.abspath(               # convierte a ruta absoluta...
-        os.path.join(             # ...una unión de rutas:
-            os.path.dirname(__file__),  # path del archivo actual (app.py)
-            '..','Chatbot' # Carpeta donde se declara la funcion.
-        )
-    )
+
+
+from Functions.Chatbot_functions import  Llama3_1_API, RAG_chat_V2, actualizacion_informacion_inicial, eliminacion_acentos, limitador_contexto
+from Functions.Embeddings import carga_BAAI
+from Functions.Loggers import Llama31_chatbot_log
+from Functions.BBDD_functions import conn_bbdd
+from Functions.MarianMT_traductor import carga_modelo_traductor
+
+logger = Llama31_chatbot_log()
+conn = conn_bbdd()
+modelo_BAAI = carga_BAAI()
+info_inicial = actualizacion_informacion_inicial()
+traductor_model, traductor_tokenizer = carga_modelo_traductor()
+
+urls_usados   = set()
+# variable que contiene la app Flask
+app = Flask(__name__) 
+
+# ---------------- Configuracion para la BBDD para guardar el contexto ----------------
+app.secret_key = "1990TESTINGPROJECT" # clave secreta para la app Flask
+# Configuracion de la sesion en la BBDD
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    'postgresql://postgres:Quiksilver90!@localhost:5432/Lervis'
 )
-from Chatbot import RAG_chat, logger, conn, modelo_BAAI, info_inicial, traductor_model, traductor_tokenizer, urls_usados
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-app = Flask(__name__) # variable que contiene la app Flask
+# ---------------- Configuracion de la sesion en Flask ----------------
+app.config['SESSION_TYPE'] = 'sqlalchemy'
+app.config['SESSION_SQLALCHEMY'] = db
+# Nombre de la tabla donde se guardarán las sesiones; se crea automáticamente
+app.config['SESSION_SQLALCHEMY_TABLE'] = 'flask_sessions'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=2)
+Session(app)
 
-
-app.secret_key = "123123123123123"
+with app.app_context():
+    db.create_all()
 
 # Ruta del landing page
 @app.route('/') 
@@ -24,53 +47,88 @@ def index():
     return render_template('landing_page.html') 
 
 # Ruta del chat
-@app.route('/chat')  
+@app.route('/chat_page')  
 def chat_page():
     return render_template('RAG_chat.html') 
 
-# Ruta para ejecutar el reseteo del contexto
+# Funcion de reseteo de contexto
 @app.route('/reset', methods=['POST'])
 def reset():
     session.pop('context', None)
-    session.pop('last_context_time', None)
-    return jsonify({'status': 'ok'})
+    return ('', 204)
 
 # Ruta que ejecuta las funciones del chat
 @app.route('/chat', methods=['POST']) 
 def chat():
 
-    user_input = request.json['message']
-    # Obtener hora actual y hora guardada (si existe)
-    ahora = datetime.utcnow()
-    last_time = session.get('last_context_time')
+    ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
+    # Toda la informacion que nos devuelve la accion POST (escribir en el chat)
+    data = request.json
+    user_input = data['message']
 
-    # Comprobar si han pasado más de 15 minutos
-    if last_time:
-        last_time = datetime.fromisoformat(last_time)
-        if ahora - last_time > timedelta(minutes=5):
-            session['context'] = "Bienvenido a Lervis"
+    context = session.get('context', f'{ahora} - Lervis: Bienvenido a Lervis')
 
-    # Obtener el contexto actual (nuevo o ya existente)
-    context = session.get('context', "Bienvenido a Lervis")
-    
-    
-    respuesta, nuevo_contexto = RAG_chat(
-        user_input=user_input,
-        context=context,
-        info_inicial=info_inicial,
-        logger=logger,
-        conn=conn,
-        embedding_model=modelo_BAAI,
-        traductor_model=traductor_model,
-        traductor_tokenizer=traductor_tokenizer,
-        ahora=ahora,
-        urls_usados=urls_usados
+    context += f"\n\n{ahora} - Usuario: {user_input}"
+    context = limitador_contexto(context)
 
+    print("\n🟡 CONTEXTO ANTES DEL RAG_chat_V2:")
+    print(context)
+
+    try:
+        # Manejo del contexto dentro de la función dependiendo de las funciones invocadas
+        full_prompt = RAG_chat_V2(
+            urls_usados=urls_usados,
+            user_input=user_input,
+            context=context,
+            logger=logger,
+            conn=conn,
+            embedding_model=modelo_BAAI,
+            ahora=ahora,
+            traductor_model=traductor_model,
+            traductor_tokenizer=traductor_tokenizer
+        )
+        
+    except Exception as e:
+        print(f"Error en RAG_chat_V2: {e}")
+        return Response("Perdon, se me cruzaron los cables, ¿Podrías repetirlo?")
+        
+    def generate():
+        for token in Llama3_1_API(full_prompt):
+            yield token 
+
+
+
+    return Response(
+        # Respuesta por tokens, es decir, es stream
+        stream_with_context(generate()),
+        content_type='text/plain',
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no"
+        }
     )
 
-    session['context'] = nuevo_contexto
-    return jsonify({'response': respuesta})
+@app.route('/save_context', methods=['POST'])
+def save_context():
+    data = request.json
+    input_usuario = data['mensaje_usuario']
+    respuesta_lervis = data['respuesta_lervis']
+    #print(f"🔵 Respuesta recibida en /save_context: {respuesta_lervis}")
 
-# Solo si ejecutas directamente el archivo, lanza el servidor
+    ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
+    contexto_nuevo = session.get('context', f'\n\n{ahora} - Lervis: Bienvenido a Lervis')
+    #print(f"🟡 Contexto antes de agregar:", contexto_nuevo)
+
+    contexto_nuevo += f"\n\n{ahora} - Usuario: {input_usuario}"
+    contexto_nuevo += f"\n\n{ahora} - Lervis: {respuesta_lervis}"
+    session['context'] = limitador_contexto(contexto_nuevo)
+    session.modified = True
+
+    #print(f"🟢 Contexto actualizado:", session['context'])
+
+    return '', 204
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    print("🟢 Iniciando la app Flask...🟢")
+    app.run(debug=False, threaded=True)

@@ -1,180 +1,183 @@
-/* Reset básico para evitar inconsistencias entre navegadores */
+/* 🔄 Reset básico para evitar diferencias entre navegadores */
 * {
-    box-sizing: border-box;  /* El tamaño total incluye padding y borde */
-    margin: 0;                /* Quita márgenes automáticos */
-    padding: 0;               /* Quita relleno automático */
-  }
-  
-  /* Estilos generales del documento */
-  html, body {
-    height: 100%;              /* Altura completa del navegador */
-    background-color: #000;    /* Fondo negro estilo terminal */
-    color: #e0e0e0;            /* Texto claro para contraste */
-    font-family: Arial;    /* Tipografía tipo consola */
-    overflow: hidden;          /* Desactiva scroll externo */
-  }
-  
-  #chat-container {
-    margin-top: 50px; /* espacio para no quedar oculto debajo de la barra */
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 50px);
-    width: 100%;
-  }
-  
-  /* Área donde se muestran los mensajes */
-  #chat-box {
-    flex: 1;                   /* Ocupa todo el espacio restante */
-    padding: 10px;             /* Espaciado interno */
-    overflow-y: auto;          /* Scroll solo si el contenido se desborda */
-    display: flex;
-    flex-direction: column;
-    gap: 10px;                 /* Espacio vertical entre mensajes */
-  }
-  
-  /* Estilo base de todos los mensajes */
-  .message {
-    max-width: 80%;            /* Máximo 80% del ancho total */
-    padding: 10px 15px;        /* Espacio interno del mensaje */
-    border-radius: 12px;       /* Bordes redondeados */
-    line-height: 1.5;          /* Altura de línea cómoda */
-    white-space: pre-wrap;     /* Respeta saltos de línea */
-    word-break: break-word;    /* Rompe palabras muy largas si es necesario */
-    margin: 0 10px;            /* Márgenes laterales */
-  }
-  
-  /* Mensaje del usuario */
-  .user {
-    align-self: flex-end;
-    background-color: #222;         /* Fondo gris oscuro */
-    color: #f3f3f3;                 /* Texto claro */
-    border-bottom-right-radius: 0;  /* Estilo de burbuja */
-  }
-  
-  /* Mensaje del bot (alineado a la izquierda) */
-  .bot {
-    align-self: flex-start;
-    background-color: #111;         /* Fondo más oscuro */
-    color: #ffffff;                 /* Texto blanco */
-    border-bottom-left-radius: 0;   /* Estilo de burbuja */
-  }
-  
-  /*Contenedor inferior donde está el input y el botón */
-  #input-area {
-    display: flex;                  /* Input y botón en una línea */
-    gap: 10px;                      /* Espacio entre input y botón */
-    padding: 20px;                  /* Aumentado para hacerlo más cómodo */
-    border-top: 1px solid #ffffff6c;  /* Línea superior de separación */
-    background-color: #111;         /* Fondo oscuro uniforme */
-  }
-  
-  /* Campo de texto para el usuario */
-  #user-input {
-    flex: 1;                        /* Ocupa todo el espacio horizontal posible dentro de #input-area */
-    padding: 15px;                 /* Espaciado interno grande (vertical y horizontal) */
-    background-color: #222;        /* Fondo gris oscuro */
-    border: 1px solid #555;        /* Borde sutil con color gris intermedio */
-    border-radius: 5px;            /* Bordes  */
-    color: #e0e0e0;                /* Color texto */
-    font-size: 16px;               /* Tamaño de letra */
-    font-family: inherit;          /* Hereda la fuente definida en el <body> (Arial en tu caso) */
-    resize: none;                  /* Evita que el usuario pueda redimensionar el textarea manualmente */
-    min-height: 50px;              /* Altura mínima para que no quede muy comprimido */
-    max-height: 300px;             /* Altura máxima antes de que aparezca scroll interno */
-    overflow-y: auto;              /* Activa scroll vertical si el contenido supera el máximo */
-    line-height: 1.4;              /* Espacio entre líneas para mayor legibilidad */
-    white-space: pre-wrap;         /*  Muestra correctamente los saltos de línea que escriba el usuario */
-  }
-  
-  /* Botón de enviar */
-  #send-button {
-    padding: 14px 20px;             /* Tamaño similar al input */
-    background-color: #312d2d;      /* Fondo oscuro neutro */
-    color: #fff;                    /* Texto blanco */
-    border: none;                   /* Sin borde */
-    border-radius: 5px;             /* Bordes suaves */
-    font-weight: bold;              /* Texto en negrita */
-    cursor: pointer;                /* Cambia el cursor al pasar por encima */
-  }
-  
-  #send-button:hover {
-    background-color: #f3ef0c;      /* Color al pasar el ratón (hover) */
-  }
-
-  /* Barra superior fija */
-#top-bar {
-    width: 100%;
-    height: 50px;
-    background-color: #353434;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start; 
-    padding: 0 20px;
-    border-bottom: 1px solid #333;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 10;
-  }
-
-/* Botón de reiniciar contexto */
-#reset-button {
-    padding: 8px 14px;
-    background-color: #444;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-#reset-button:hover {
-    background-color: #fdf7f7;
-  }
-
-/*---------------- BOTON LANDING PAGE  ------ */
-#enter-btn {
-position: relative;
-padding: 0.75em 1.5em;
-background: linear-gradient(145deg,
-#004a66 0%,
-#3bbfdc 25%,
-#7DF9FF  50%,
-#c7ffff 75%,
-#ffffff 100%
-);
-color: #222;
-font-weight: bold;
-border: 1px solid #aaa;
-border-radius: 8px;
-cursor: pointer;
-box-shadow:
-    inset 0 2px 4px rgba(255,255,255,0.6),  /* luz interna suave */
-    0 4px 8px rgba(0,0,0,0.3);               /* sombra exterior */
-transition: transform 0.2s ease, box-shadow 0.2s ease;
-overflow: hidden;
+  box-sizing: border-box;  /* El tamaño total incluye padding y borde */
+  margin: 0;                /* Elimina márgenes por defecto */
+  padding: 0;               /* Elimina relleno por defecto */
 }
 
+/*  Estilo global */
+html, body {
+  height: 100%;              /* Ocupa toda la altura del navegador */
+  background-color: #000;    /* Fondo negro estilo terminal */
+  color: #e0e0e0;            /* Texto claro para contraste */
+  font-family: Arial;        /* Tipografía consola */
+  overflow: hidden;          /* Evita scroll externo */
+}
+/* Estilo base para todos los mensajes */
+.message {
+  max-width: 80%;                     /* Para que no ocupen todo el ancho */
+  padding: 10px 15px;
+  border-radius: 12px;                /* Bordes redondeados */
+  line-height: 1.5;
+  white-space: normal;              /* Mantiene saltos de línea */
+  word-break: break-word;             /* Rompe palabras largas si es necesario */
+  margin: 0 10px;                     /* Separación lateral */
+}
+/*  Contenedor principal del chat */
+#chat-container {
+  margin-top: 50px;                    /* Deja espacio para la barra superior */
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 50px);          /* Altura dinámica menos la barra */
+  width: 100%;
+}
+
+/*  Área donde se muestran los mensajes */
+#chat-box {
+  flex: 1;                             /* Ocupa todo el espacio disponible */
+  padding: 10px;
+  overflow-y: auto;                   /* Aparece scroll si el contenido crece */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;                           /* Espacio entre mensajes */
+  min-height: 100px;                  /* 🔧 Evita colapso cuando está vacío */
+}
+
+/*  Mensaje del usuario (a la derecha) */
+.user {
+  align-self: flex-end;               /* Alineado a la derecha */
+  background-color: #222;             /* Fondo gris oscuro */
+  color: #f3f3f3;                     /* Texto claro */
+  border-bottom-right-radius: 0;      /* Estilo burbuja */
+}
+
+/*  Mensaje del bot (a la izquierda) */
+.bot , .bot div {
+  align-self: flex-start;
+  background-color: #111111fd;
+  color: #ffffffa9;
+  border-bottom-left-radius: 0;
+  white-space: normal;
+  font-size: 16px;
+  min-height: 20px;
+}
+
+
+/*  Zona de entrada del usuario */
+#input-area {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #797777;
+  background-color: #111;
+}
+
+/*  Campo de texto del usuario */
+#user-input {
+  flex: 1;
+  padding: 15px;
+  background-color: #222;
+  border: 1px solid #555;
+  border-radius: 5px;
+  color: #e0e0e0;
+  font-size: 16px;
+  font-family: inherit;
+  resize: none;
+  min-height: 50px;
+  max-height: 300px;
+  overflow-y: auto;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+/*  Botón de enviar */
+#send-button {
+  padding: 14px 20px;
+  background-color: #312d2d;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/*  Hover sobre el botón de enviar */
+#send-button:hover {
+  background-color: #f3ef0c;
+}
+
+/*  Barra superior fija */
+#top-bar {
+  width: 100%;
+  height: 50px;
+  background-color: #353434;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 20px;
+  border-bottom: 1px solid #333;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10; /* Siempre encima */
+}
+
+/* Botón de reinicio de conversación */
+#reset-button {
+  padding: 8px 14px;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Hover del botón reset */
+#reset-button:hover {
+  background-color: #fdf7f7;
+}
+
+/* Botón de la landing page */
+#enter-btn {
+  position: relative;
+  padding: 0.75em 1.5em;
+  background: linear-gradient(145deg,
+    #004a66 0%,
+    #3bbfdc 25%,
+    #7DF9FF 50%,
+    #c7ffff 75%,
+    #ffffff 100%
+  );
+  color: #222;
+  font-weight: bold;
+  border: 1px solid #aaa;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 2px 4px rgba(255,255,255,0.6),
+    0 4px 8px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+/*  Hover del botón de entrada */
 #enter-btn:hover {
-/* Gradiente más claro… (igual que antes) */
-background: linear-gradient(145deg,
+  background: linear-gradient(145deg,
     #005f0a 0%,
     #4fdfe2 30%,
     #7DF9FF 60%,
     #e0ffff 100%
-);
-
-/* Efecto glow super‑intenso */
-box-shadow:
+  );
+  box-shadow:
     inset 0 2px 6px rgba(255,255,255,0.8),
     0 0 10px rgba(125,249,255,0.9),
     0 0 20px rgba(125,249,255,0.7),
-    0 0 40px rgba(125,249,255,0.5),  /* capa extra más difusa */
-    0 0 60px rgba(125,249,255,0.3),  /* capa aún más grande */
+    0 0 40px rgba(125,249,255,0.5),
+    0 0 60px rgba(125,249,255,0.3),
     0 6px 12px rgba(0,0,0,0.3);
-
-transform: translateY(-2px);
-transition: transform 0.2s ease,
-            box-shadow 0.2s ease,
-            background 0.2s ease;
+  transform: translateY(-2px);
+  transition: transform 0.2s ease,
+              box-shadow 0.2s ease,
+              background 0.2s ease;
 }

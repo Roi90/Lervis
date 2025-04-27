@@ -4,10 +4,14 @@ Este archivo contiene el desarrollo del Chatbot con Llama 3.1 mediante Ollama.
 Autor: Roi Pereira Fiuza
 """
 import json
+import requests
 import re
 import subprocess
 import pandas as pd
 from datetime import datetime,timedelta
+from ollama import chat
+
+import requests
 from Functions.Embeddings import embedding, carga_BAAI
 from Functions.BBDD_functions import conn_bbdd
 from Functions.Loggers import Llama31_chatbot_log
@@ -46,28 +50,14 @@ def eliminacion_acentos(user_input: str) -> str:
 
     return user_input
 
-def limitador_contexto(input_context: str, max_interacciones: int = 20) -> str:
+def limitador_contexto(input_context: str, max_chars: int = 200000) -> str:
     """
-    Actualiza el contexto parcial del chatbot manteniendo un historial de interacciones reciente.
-    Esta función agrega la última interacción del usuario y la respuesta del chatbot al contexto existente.
-    Si el número total de líneas en el contexto supera un límite, se eliminan las interacciones más antiguas
-    para mantener solo las más recientes.
-    Args:
-        input_context (str): El contexto actual del chatbot, que contiene el historial de interacciones.
-        user_input (str): El mensaje más reciente enviado por el usuario.
-        result (str): La respuesta generada por el chatbot para el mensaje del usuario.
-    Returns:
-        str: El contexto actualizado que incluye la nueva interacción y mantiene un historial limitado.
-    """ 
-    # Se divide el contexto por interacciones
-    contexto_particionado = input_context.split('**************************')
-    if len(contexto_particionado) > max_interacciones:
-        # Se eliminan las interacciones más antiguas
-        contexto_particionado = contexto_particionado[-max_interacciones:]
-    # Reconstruccion del contexto
-    contexto = "**************************".join(contexto_particionado).strip()
-    
-    return contexto
+    Recorta el contexto si supera un número máximo de caracteres.
+    Mantiene los últimos caracteres más recientes.
+    """
+    if len(input_context) > max_chars:
+        return input_context[-max_chars:]
+    return input_context
 
 def actualizacion_informacion_inicial():
     """
@@ -187,9 +177,6 @@ def deteccion_temporalidad(user_input: str):
         return None
 
 def deteccion_intencion(user_input: str) -> str:
-
-    logger = Llama31_chatbot_log()
-
     system_prompt = (
         "Eres un clasificador cuya única función es decidir entre dos intenciones:\n"
         "- consultar  → el usuario quiere consultar la base de datos.\n"
@@ -198,197 +185,84 @@ def deteccion_intencion(user_input: str) -> str:
         "{ \"intencion\": \"consultar\" }\n"
         "o\n"
         "{ \"intencion\": \"hablar\" }\n"
-        "¡SIN NADA MAS Y SIN ACENTOS NI NADA!"
-        "Unicamente usa la clave 'intencion' en el JSON.\n\n"
+        "¡SIN NADA MAS Y SIN ACENTOS NI NADA! Unicamente usa la clave 'intencion'.\n\n"
     )
-
     full_prompt = f"{system_prompt}\n\nUsuario: {user_input}\nClasificación:"
 
-    # Linea de comandos para ejecutar el modelo de lenguaje Llama 3.1 mediante Ollama
-    cmd = [
-        "ollama", "run", "llama3.1:latest",
-        full_prompt,
-        "--format", "json",
-        "--nowordwrap"
-    ]
-    
-    proc = subprocess.run( # Interactuamos con Ollama mediante subprocess
-        cmd,
-        capture_output=True,
-        text=True,# Devuelve texto y no bytes            
-        encoding="utf-8", # codificacion utf-8 para la decodificacion del texto      
-        errors="replace"  # En el caso de que haya errores de transformacion de los bytes a texto, se reemplazan por un caracter de reemplazo.
+    url = "http://localhost:11434/api/generate"
+    data = {
+        "model": "llama3.1",
+        "prompt": full_prompt,
+        "stream": True
+    }
+
+    respuesta_completa = ""
+    with requests.post(url, json=data, stream=True) as r:
+        for line in r.iter_lines():
+            if line:
+                try:
+                    fragment = json.loads(line.decode("utf-8"))
+                    token = fragment.get("response", "")
+                    #print(token, end="", flush=True)
+                    respuesta_completa += token
+                except json.JSONDecodeError:
+                    continue
+
+    # ✅ Ahora parseamos el texto como JSON real
+    try:
+        respuesta_json = json.loads(respuesta_completa)
+        return respuesta_json.get("intencion", "hablar")
+    except json.JSONDecodeError:
+        print("\nERROR: No se pudo parsear la intención:", respuesta_completa)
+        return "hablar"
+
+def Llama3_1_API2(prompt):
+    url = "http://localhost:11434/api/generate"
+    data = {
+        "model": "llama3.1",
+        "prompt": prompt,
+        "stream": True,
+        "raw": False
+    }
+
+    respuesta_completa = ""
+
+    with requests.post(url, json=data, stream=True) as r:
+        for line in r.iter_lines():
+            if line:
+                try:
+                    fragment = json.loads(line.decode("utf-8"))
+                    token = fragment.get("response", "")
+                    print(token, end="", flush=True)
+                    respuesta_completa += token
+                    # Envio del token en modo streaming.
+                    yield token
+
+                except json.JSONDecodeError:
+                    continue
+
+    #  Marcar final (opcional, para el backend)
+    yield f"<--FIN-->{respuesta_completa}"
+
+def Llama3_1_API(prompt):
+    # Utiliza la API local.
+    stream = chat(
+        model="llama3.1",
+        messages=[{"role": "user", "content": prompt}],
+        stream=True
     )
 
-
-    if proc.returncode != 0:
-        print("Error al ejecutar Ollama:", proc.stderr)
-        logger.error(f"Error al ejecutar Ollama: {proc.stderr}")
-        return f"ERROR {proc.returncode}"
-
-    data = json.loads(proc.stdout)['intencion']
-    
-    return data
-
-def chat(embedding_model):
-
-    try:
-        logger = Llama31_chatbot_log()
-        conn = conn_bbdd()
-        print("Lervis: Bienvenido a Lervis")
-        context = "Lervis: Bienvenido a Lervis"
-    except Exception as e:
-        logger.error(f"Iniciando el logger y la conexion a la BBDD: {e}")
-
-    try:
-        info_inicial = actualizacion_informacion_inicial()
-    except Exception as e:
-        logger.error(f"Error al actualizar la informacion inicial: {e}")
-    
-    # Traductor español - ingles
-    traductor_model, traductor_tokenizer = carga_modelo_traductor()
-
-    while True:
-        template = f"""
-        Eres Lervis, un asistente experto en ciencias de la computación, especializado en analizar publicaciones académicas de arXiv.
-
-        Tu tarea es responder de forma clara y breve a la pregunta del usuario, usando solo el contexto proporcionado si está disponible.
-       
-        --- Contexto disponible ---
-        {context}
-
-        --- Información adicional ---
-        {info_inicial}
-
-        --- Pregunta del usuario ---
-        """
-    
-        # Input del usuario
-        user_input = input("Usuario: ") 
-        # Variable de detecion de temporalidad
-        if deteccion_intencion(user_input) == 'consultar':
-            temporalidad = deteccion_temporalidad(user_input)
-            # Se detecta temporalidad en el input del usuario.
-            if temporalidad is not None:
-                try:
-                    consulta = temporalidad_a_SQL(conn,temporalidad)
-                    # Se apendiza el valor de la consulta al contexto
-                    context += f"\n\nPublicaciones encontradas para esas fechas:({consulta})" 
-                   
-                   # ---------------------------------- LLM - Llama 3.1 ----------------------------------
-                    full_prompt = f"{template}\n\nUsuario: {user_input}\nRespuesta:"
-                    # Linea de comandos para ejecutar el modelo de lenguaje Llama 3.1 mediante Ollama
-                    cmd = [
-                        "ollama", "run", "llama3.1:latest",
-                        full_prompt,
-                        #"--format", "json",
-                        #"--nowordwrap"
-                    ]
-                    proc = subprocess.run( # Interactuamos con Ollama mediante subprocess
-                        cmd,
-                        capture_output=True, # Comando que captura el output del comando que se ejecuta en la terminal
-                        text=True,# Devuelve texto y no bytes            
-                        encoding="utf-8", # codificacion utf-8 para la decodificacion del texto      
-                        errors="replace"  # En el caso de que haya errores de transformacion de los bytes a texto, se reemplazan por un caracter de reemplazo.
-                    )
-                    if proc.returncode != 0:
-                        print("Error al ejecutar Ollama:", proc.stderr)
-                        logger.error(f"Error al ejecutar Ollama: {proc.stderr}")
-                        return f"ERROR {proc.returncode}"
-                    #respuesta = parser_salida_LLM(proc.stdout)
-                    #respuesta = json.loads(proc.stdout)['respuesta']
-                    respuesta = proc.stdout
-                    # --------------------------------------------------------------------
-
-                    context = actualizacion_contexto(context, user_input, respuesta)
-
-                except Exception as e:
-                    logger.error(f"En la lectura de temporalidad: {e}")
-                    print('Lervis: Disculpame, me estaba haciendo unos huevos fritos, ¿Podrías repetir la pregunta?')
-                    continue
-            # No Se detecta temporalidad en el input del usuario.
-            else:
-                try:
-                    # Traduccion al ingles para mejor resultado de similitud
-                    user_input = translate_text(traductor_model, traductor_tokenizer, user_input)
-                    # Embedding de la consulta del usuario
-                    embedding_denso, embedding_disperso = embedding(user_input, model=embedding_model)
-                    # Recuperacion de documentos mediante similitud del coseno
-                    docs_recuperado = similitud_coseno(embedding_denso, conn, 0.3, 5)
-                    df_temp = reranking(docs_recuperado, embedding_disperso)
-                    # El numero de documentos generados en el contexto es en funcion de num_docs
-                    docs_formateados = formato_contexto_doc_recuperados(context, conn, df_temp, num_docs=3)
-                    # Se apendiza el valor de la consulta al contexto
-                    context += f"{docs_formateados}"
-                    #print(context)
-                    # ---------------------------------- LLM - Llama 3.1 ----------------------------------
-                    full_prompt = f"{template}\n\nUsuario: {user_input}\nRespuesta:"
-                    # Linea de comandos para ejecutar el modelo de lenguaje Llama 3.1 mediante Ollama
-                    cmd = [
-                        "ollama", "run", "llama3.1:latest",
-                        full_prompt,
-                        #"--format", "json",
-                        #"--nowordwrap"
-                    ]
-                    proc = subprocess.run( # Interactuamos con Ollama mediante subprocess
-                        cmd,
-                        capture_output=True,
-                        text=True,# Devuelve texto y no bytes            
-                        encoding="utf-8", # codificacion utf-8 para la decodificacion del texto      
-                        errors="replace"  # En el caso de que haya errores de transformacion de los bytes a texto, se reemplazan por un caracter de reemplazo.
-                    )
-                    if proc.returncode != 0:
-                        print("Error al ejecutar Ollama:", proc.stderr)
-                        logger.error(f"Error al ejecutar Ollama: {proc.stderr}")
-                        return f"ERROR {proc.returncode}"
-                    #print("SALIDA CONSULTA: ", proc.stdout)
-                    #respuesta = parser_salida_LLM(proc.stdout)
-                    respuesta = proc.stdout
-                    #respuesta = json.loads(proc.stdout)['respuesta']
-                    # -------------------------------------------------------------------- 
-                    print("Lervis: ", respuesta)
-                    context = actualizacion_contexto(context, user_input, docs_formateados)
-                    continue
-                except Exception as e:
-                    logger.error(f"Error al crear el embedding: {e}")
-                    print('Lervis: Disculpame, me estaba sirviendo un cafe, ¿Podrías repetir la pregunta?')
-                    continue
-        else: # Chatear con el usuario
-            
-            # ---------------------------------- LLM - Llama 3.1 ----------------------------------
-            full_prompt = f"{template}\n\nUsuario: {user_input}\nRespuesta:"
-            # Linea de comandos para ejecutar el modelo de lenguaje Llama 3.1 mediante Ollama
-            cmd = [
-                "ollama", "run", "llama3.1:latest",
-                full_prompt,
-                #"--format", "json",
-                #"--nowordwrap"
-            ]
-            proc = subprocess.run( # Interactuamos con Ollama mediante subprocess
-                cmd,
-                capture_output=True,
-                text=True,# Devuelve texto y no bytes            
-                encoding="utf-8", # codificacion utf-8 para la decodificacion del texto      
-                errors="replace"  # En el caso de que haya errores de transformacion de los bytes a texto, se reemplazan por un caracter de reemplazo.
-            )
-            if proc.returncode != 0:
-                print("Error al ejecutar Ollama:", proc.stderr)
-                logger.error(f"Error al ejecutar Ollama: {proc.stderr}")
-                return f"ERROR {proc.returncode}"
-            #print("SALIDA HABLAR: ", proc.stdout)
-            #respuesta = parser_salida_LLM(proc.stdout)
-            #respuesta = json.loads(proc.stdout)['respuesta']
-            respuesta = proc.stdout
-            print("Lervis: ", respuesta)
-            context = actualizacion_contexto(context, user_input, respuesta)
-            # --------------------------------------------------------------------
-
-def RAG_chat(urls_usados, user_input:str, context: str, info_inicial:str, logger, conn, embedding_model, traductor_model,traductor_tokenizer, ahora) -> tuple[str, str]:
+    for part in stream:
+        # part['message']['content'] contiene el chunk de texto
+        #print(part["message"]["content"], end="", flush=True)
+        yield part["message"]["content"]
 
 
-   
+def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embedding_model, ahora,traductor_model, traductor_tokenizer) -> tuple[str, str]:
+
     if deteccion_intencion(user_input) == 'consultar':
         temporalidad = deteccion_temporalidad(user_input)
+        print("\n\nTEMPORALIDAD----->",temporalidad, flush=True)
         # Se detecta temporalidad en el input del usuario.
         if temporalidad is not None:
             
@@ -396,47 +270,29 @@ def RAG_chat(urls_usados, user_input:str, context: str, info_inicial:str, logger
                 #user_input = translate_text(traductor_model, traductor_tokenizer, user_input)
                 consulta = temporalidad_a_SQL(conn,temporalidad)
                 # Apendizo al contexto
-                context += f'\n{ahora} Usuario: {user_input}'
-                context += f"\nLervis (sistema): Conteo de publicaciones en la base de datos para {temporalidad[1]}: {consulta}"
-                # ---------------------------------- LLM - Llama 3.1 ----------------------------------
-                full_prompt = f"""  
-                Eres Lervis, un asistente experto en ciencias de la computacion, especializado en el análisis de artículos académicos de arXiv.\n\n              
+                #context += f'\n{ahora} Usuario: {user_input}'
+                context += f"\nLervis: Conteo de publicaciones en la base de datos para {temporalidad[1]}: {consulta}"
+                full_prompt = f"""
+                Eres un experto en publicaciones academicas de Arxiv.\n
+                Se conciso y claro en tus respuestas.\n
+                Tono profesional y amable.\n
+                Usa el contexto lo maximo posible para responder.\n
+                **CONTESTA UNICAMENTE ESPAÑOL**\n\n   
+                             
                 {context}
                 """
-                # Linea de comandos para ejecutar el modelo de lenguaje Llama 3.1 mediante Ollama
-                cmd = [
-                    "ollama", "run", "llama3.1:latest",
-                    full_prompt,
-                ]
-                proc = subprocess.run( # Interactuamos con Ollama mediante subprocess
-                    cmd,
-                    capture_output=True, # Comando que captura el output del comando que se ejecuta en la terminal
-                    text=True,# Devuelve texto y no bytes            
-                    encoding="utf-8", # codificacion utf-8 para la decodificacion del texto      
-                    errors="replace"  # En el caso de que haya errores de transformacion de los bytes a texto, se reemplazan por un caracter de reemplazo.
-                )
-                if proc.returncode != 0:
-                    print("Error al ejecutar Ollama:", proc.stderr)
-                    logger.error(f"Error al ejecutar Ollama: {proc.stderr}")
-                    return f"ERROR {proc.returncode}", context
-                respuesta = proc.stdout
-                # --------------------------------------------------------------------
-                context += f"\nLervis: {respuesta.strip()}\n\n **************************\n\n"
-                # Control del tamanio del texto
-                context = limitador_contexto(context)
-                print(context)
-                return respuesta.strip(), context
-
+                return full_prompt.strip()#, context
+            
             except Exception as e:
+                print(f"En la lectura de temporalidad: {e}")
                 logger.error(f"En la lectura de temporalidad: {e}")
                 return "Disculpame, me estaba haciendo unos huevos fritos, ¿Podrías repetir la pregunta?", context
         
         # No Se detecta temporalidad en el input del usuario.
         else:
-            try:
-                # Traduccion al ingles para mejor resultado de similitud
-                #user_input = translate_text(traductor_model, traductor_tokenizer, user_input)
-                # Embedding de la consulta del usuario
+            try:# Se traudce el input para mejores resultados.
+                user_input = translate_text(traductor_model, traductor_tokenizer, user_input)
+                # Dado que se consulta, se genera el embedding
                 embedding_denso, embedding_disperso = embedding(user_input, model=embedding_model)
                 # Recuperacion de documentos mediante similitud del coseno
                 docs_recuperado = similitud_coseno(embedding_denso, conn, 0.3, 5)
@@ -444,37 +300,21 @@ def RAG_chat(urls_usados, user_input:str, context: str, info_inicial:str, logger
                 # El numero de documentos generados en el contexto es en funcion de num_docs
                 doc_formateado = formato_contexto_doc_recuperados(urls_usados, conn, df_temp, num_docs=2)
                 # Se apendiza el valor de la consulta al contexto
-                context += f'\n{ahora} Usuario: {user_input}'
+                #context += f'\n{ahora} Usuario: {user_input}'
                 # Validacion de que no esta vacio
                 if doc_formateado:
-                    context += f"\n\nDocumentos recuperados:\n\n{doc_formateado}"
+                    context += f"\n\nRealiza una breve explicacion sobre los documentos:\n\n{doc_formateado}"
                 # ---------------------------------- LLM - Llama 3.1 ----------------------------------
-                full_prompt = f"""
-                Eres Lervis, un asistente experto en ciencias de la computacion, especializado en el análisis de artículos académicos de arXiv.\n\n 
+                full_prompt = f"""  
+                Eres un experto en publicaciones academicas de Arxiv.\n
+                 Se conciso y claro en tus respuestas.\n
+                Tono profesional y amable.\n
+                Usa el contexto lo maximo posible para responder.\n
+                **CONTESTA UNICAMENTE ESPAÑOL**\n\n               
                 {context}
                 """
-                # Linea de comandos para ejecutar el modelo de lenguaje Llama 3.1 mediante Ollama
-                cmd = [
-                    "ollama", "run", "llama3.1:latest",
-                    full_prompt,
-                ]
-                proc = subprocess.run( # Interactuamos con Ollama mediante subprocess
-                    cmd,
-                    capture_output=True,
-                    text=True,# Devuelve texto y no bytes            
-                    encoding="utf-8", # codificacion utf-8 para la decodificacion del texto      
-                    errors="replace"  # En el caso de que haya errores de transformacion de los bytes a texto, se reemplazan por un caracter de reemplazo.
-                )
-                if proc.returncode != 0:
-                    print("Error al ejecutar Ollama:", proc.stderr)
-                    logger.error(f"Error al ejecutar Ollama: {proc.stderr}")
-                    return f"ERROR {proc.returncode}"
-
-                respuesta = proc.stdout
-                # -------------------------------------------------------------------- 
-                context = limitador_contexto(context)
-                print(context)
-                return respuesta.strip(), context
+                return full_prompt.strip()#, context
+        
             except Exception as e:
                 logger.error(f"Error al crear el embedding: {e}")
                 return "Disculpame, me estaba sirviendo un cafe, ¿Podrías repetir la pregunta?", context
@@ -482,41 +322,13 @@ def RAG_chat(urls_usados, user_input:str, context: str, info_inicial:str, logger
     else: # Chatear con el usuario
         
         # ---------------------------------- LLM - Llama 3.1 ----------------------------------
-        context += f'\n{ahora} Usuario: {user_input}'
-        full_prompt = f"""
-        Eres Lervis, un asistente experto en ciencias de la computacion, especializado en el análisis de artículos académicos de arXiv.\n\n   
+        #context += f'\n{ahora} Usuario: {user_input}'
+        full_prompt = f"""  
+        Eres un experto en publicaciones academicas de Arxiv.\n
+        Se conciso y claro en tus respuestas.\n
+        Tono profesional y amable.\n
+        Usa el contexto lo maximo posible para responder.\n
+        **CONTESTA UNICAMENTE ESPAÑOL**\n\n                
         {context}
         """
-        # Linea de comandos para ejecutar el modelo de lenguaje Llama 3.1 mediante Ollama
-        cmd = [
-            "ollama", "run", "llama3.1:latest",
-            full_prompt,
-        ]
-        proc = subprocess.run( # Interactuamos con Ollama mediante subprocess
-            cmd,
-            capture_output=True,
-            text=True,# Devuelve texto y no bytes            
-            encoding="utf-8", # codificacion utf-8 para la decodificacion del texto      
-            errors="replace"  # En el caso de que haya errores de transformacion de los bytes a texto, se reemplazan por un caracter de reemplazo.
-        )
-        if proc.returncode != 0:
-            print("Error al ejecutar Ollama:", proc.stderr)
-            logger.error(f"Error al ejecutar Ollama: {proc.stderr}")
-            return f"ERROR {proc.returncode}", context
-        
-        respuesta = proc.stdout        
-        # --------------------------------------------------------------------
-        context = limitador_contexto(context)
-        print(context)
-        return respuesta.strip(), context
-
-#input_user = 'Total de publicaciones que han abril 2025'
-#tupla = deteccion_temporalidad(input_user)
-#print(tupla)
-#calculos =  temporalidad_a_SQL(conn_bbdd(), tupla)
-#print(calculos)
-
-#entrada = "Que publicaciones hay en abril 2025"
-#print(entrada)
-#print(deteccion_intencion(entrada))  # probablemente 'retrieve'
-#chat(carga_BAAI()) # Cargamos el modelo de embeddings BAAI y lo pasamos al chatbot
+        return full_prompt.strip()#, context
