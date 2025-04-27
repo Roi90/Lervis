@@ -242,7 +242,11 @@ def Llama3_1_API(prompt):
             elif part.get("done", False):
                 try:
                     duracion_segundos = part['total_duration'] / 1e9
-                    logger.debug(f"Tokens de entrada - {part['prompt_eval_count']}, Tokens generados - {part['eval_count']},  Duracion Segundos - {duracion_segundos}")
+                    if duracion_segundos > 0:
+                        token_segundo = part['eval_count'] / duracion_segundos
+                    else:
+                        token_segundo = 0
+                    logger.debug(f"Tokens de entrada - {part['prompt_eval_count']}, Tokens generados - {part['eval_count']},  Duracion Segundos - {duracion_segundos:.2f}, Token por segundo - {token_segundo:.2f}")
                 except Exception as e:
                     logger.error(f"Error extrayendo metricas del modelo: {e}")
     except Exception as e:

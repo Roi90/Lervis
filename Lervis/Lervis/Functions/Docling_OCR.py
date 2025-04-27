@@ -128,8 +128,11 @@ def Archivo_to_OCR(input_doc_path: str, doc_converter: DocumentConverter) -> Dat
         # formato optimizado cuando se utilizan herramientas de Huggin Face
         dataset = Dataset.from_pandas(df)
 
-        end_time = time.time() - start_time
-        logger.info(f"Documento descargado y segmentado en {end_time:.2f} segundos.")
+        end_time = time.time()
+        duracion = end_time - start_time
+        logger.info(f"Documento descargado y segmentado en {duracion:.2f} segundos.")
+        logger.debug(f"Duracion OCR segundos - {duracion:.2f}, Paginas - {len(dataset)}")
+        
         # Reconstruccion de las imagenes dentro del tipo dataset.
         dataset = dataset.map(transform_bytes_to_image)
         return dataset

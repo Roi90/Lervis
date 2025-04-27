@@ -72,6 +72,7 @@ def Florence2_detailed_annotation(model, processor, image: Image, task_prompt='<
         image_size=(image.width, image.height)
     )
     timestamp_elapsed = time.time()
-    logger.info(f"Tiempo de inferencia: {timestamp_elapsed - timestamp} segundos)")
+    duracion = timestamp_elapsed - timestamp
+    logger.debug(f"Tiempo de inferencia - {duracion:.2f} segundos, Caracteres generados - {len(parsed_answer)} , Alto Imagen - {image.height}, Ancho Imagen - {image.width}")
 
     return parsed_answer

@@ -1,3 +1,4 @@
+from datetime import time
 from transformers import MarianMTModel, MarianTokenizer
 from Functions.Loggers import crear_logger
 
@@ -8,8 +9,8 @@ def carga_modelo_traductor(src_lang="es"):
     Carga el modelo y el tokenizador para la traducción de un idioma a otro.
     
     Args:
-        src_lang (str): Idioma de origen (código ISO 639-1).
-        tgt_lang (str): Idioma de destino (código ISO 639-1).
+        src_lang (str): Idioma de origen.
+        tgt_lang (str): Idioma de destino.
         
     Returns:
         model: Modelo de traducción cargado.
@@ -27,13 +28,30 @@ def carga_modelo_traductor(src_lang="es"):
 
 def translate_text(model, tokenizer, text):
     try:
+        start_time = time.time()
+                
+        intput_text_length = len(text)
         # Tokeniza el texto
         translated = model.generate(**tokenizer(text, return_tensors="pt", padding=True))
 
         # Decodifica el resultado
         result = tokenizer.decode(translated[0], skip_special_tokens=True)
+        output_text_length =  len(result)
 
+        end_time = time.time()
+        duracion = end_time - start_time
+
+        # Dado que es de español a ingles se espera que se compacte el texto, por lo que el ratio ha de ser menor a 1
+        ratio = intput_text_length / output_text_length 
+        categoria = 'Esperada'
+        if ratio > 1:
+            logger.warning(f" Ratio > 1 Texto original - {text}, Texto traducido - {result}")
+            categoria = 'No Esperada'
+            
+        
+        logger.debug(f"Duracion segundos - {duracion:.2f}, Caracteres input - {intput_text_length}, Caracteres output - {output_text_length}, Ratio - {ratio:.2f}, Categoria - {categoria}")
         return result
+    
     except Exception as e:
         logger.error(f"Error al traducir el texto: {e}")
         return text
