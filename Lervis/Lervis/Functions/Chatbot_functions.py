@@ -4,19 +4,18 @@ Este archivo contiene el desarrollo del Chatbot con Llama 3.1 mediante Ollama.
 Autor: Roi Pereira Fiuza
 """
 import json
-import requests
 import re
-import subprocess
 import pandas as pd
 from datetime import datetime,timedelta
 from ollama import chat
 
-import requests
 from Functions.Embeddings import embedding, carga_BAAI
 from Functions.BBDD_functions import conn_bbdd
-from Functions.Loggers import Llama31_chatbot_log
+from Functions.Loggers import crear_logger
 from Functions.BBDD_functions import similitud_coseno, reranking, formato_contexto_doc_recuperados,temporalidad_a_SQL, conn_bbdd
 from Functions.MarianMT_traductor import carga_modelo_traductor, translate_text
+
+logger = crear_logger('Funciones_Chatbot', 'Funciones_Chatbot.log')
 
 def eliminacion_acentos(user_input: str) -> str:
     """
@@ -66,7 +65,11 @@ def actualizacion_informacion_inicial():
     """
     # Variable para almacenar la información inicial actualizada
     info_incial = ''
-    conn =conn_bbdd()
+    try:
+        conn =conn_bbdd()
+    except Exception as e:
+        logger.error(f"Error al conectar a la base de datos: {e}")
+        
 
     
     # Consulta SQL para obtener la información sobre las categorías y el conteo de publicaciones
@@ -94,7 +97,7 @@ def actualizacion_informacion_inicial():
         
     info_incial += f"Fecha minima de publicacion: {categorias[0]['fecha_minima']}\n"
     info_incial += f"Fecha maxima de publicacion: {categorias[0]['fecha_maxima']}\n"
-    info_incial += f"Cantidad total de categorias: {categorias[0]['conteo_categorias']}\n"
+    info_incial += f"Numero total de publicaciones: {categorias[0]['conteo_categorias']}\n"
     info_incial += f"Pagina web de ArXiv: https://www.arxiv.org/\n"
         
     return info_incial
@@ -194,37 +197,63 @@ def deteccion_intencion(user_input: str) -> str:
         response = chat(
             model="llama3.1",
             messages=[{"role": "user", "content": full_prompt}],
-            stream=False  # ❗️NO streaming
+            stream=False 
         )
 
         texto_respuesta = response["message"]["content"]
-
+        # transformacion a segundos
+        duracion_segundos = response['total_duration'] / 1e9
         # Parseamos el JSON de la respuesta
-        respuesta_json = json.loads(texto_respuesta)
-        print(f"🟢 Intencion: {respuesta_json}")
-        return respuesta_json.get("intencion", "hablar")
-    except (KeyError, json.JSONDecodeError) as e:
-        print(f"❌ Error detectando intención: {e}")
+        try:
+            respuesta_json = json.loads(texto_respuesta)
+            intencion = respuesta_json.get("intencion")
+            if intencion  in ["consultar", "hablar"]:
+                logger.debug(f"Input usuario - {user_input}, Intencion detectada - {respuesta_json}")
+                logger.debug(f"Tokens de entrada - {response['prompt_eval_count']}, Tokens generados - {response['eval_count']},  Duracion Segundos - {duracion_segundos}")
+                return intencion
+            else:
+                logger.error(f"Respuesta inesperada del modelo: {texto_respuesta}")
+                # En caso de respuesta inesperada, se habla
+                return "hablar"
+        except json.JSONDecodeError:
+            logger.error(f"Error al decodificar JSON: {texto_respuesta}")
+            # En caso de error en el JSON, se habla
+            return "hablar"
+
+    except Exception as e:
+        logger.error(f"Error detectando intención: {e}")
+        # En caso de error, se habla
         return "hablar"
 
 
 def Llama3_1_API(prompt):
-    # Utiliza la API local.
-    stream = chat(
-        model="llama3.1",
-        messages=[{"role": "user", "content": prompt}],
-        stream=True
-    )
+    try:
+        # Utiliza la API local.
+        stream = chat(
+            model="llama3.1",
+            messages=[{"role": "user", "content": prompt}],
+            stream=True
+        )
 
-    for part in stream:
-        yield part["message"]["content"]
+        for part in stream:
+            if "message" in part:
+                yield part["message"]["content"]
+            # Se verifica que el Stream a terminado
+            elif part.get("done", False):
+                try:
+                    duracion_segundos = part['total_duration'] / 1e9
+                    logger.debug(f"Tokens de entrada - {part['prompt_eval_count']}, Tokens generados - {part['eval_count']},  Duracion Segundos - {duracion_segundos}")
+                except Exception as e:
+                    logger.error(f"Error extrayendo metricas del modelo: {e}")
+    except Exception as e:
+        logger.error(f"Error en la API de Llama3.1: {e}")
+        yield "Lo siento, hubo un error al procesar tu solicitud."
 
 
-def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embedding_model, ahora,traductor_model, traductor_tokenizer) -> tuple[str, str]:
+def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embedding_model, traductor_model, traductor_tokenizer) -> tuple[str, str]:
 
     if deteccion_intencion(user_input) == 'consultar':
         temporalidad = deteccion_temporalidad(user_input)
-        print("\n\nTEMPORALIDAD----->",temporalidad, flush=True)
         # Se detecta temporalidad en el input del usuario.
         if temporalidad is not None:
             
@@ -243,11 +272,10 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
                              
                 {context}
                 """
-                return full_prompt.strip()#, context
+                return full_prompt.strip()
             
             except Exception as e:
-                print(f"En la lectura de temporalidad: {e}")
-                logger.error(f"En la lectura de temporalidad: {e}")
+                logger.error(f"En la lectura de temporalidad: {e} - temporalidad: {temporalidad}")
                 return "Disculpame, me estaba haciendo unos huevos fritos, ¿Podrías repetir la pregunta?", context
         
         # No Se detecta temporalidad en el input del usuario.
@@ -266,7 +294,7 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
                 # Validacion de que no esta vacio
                 if doc_formateado:
                     context += f"\n\nRealiza una breve explicacion sobre los documentos:\n\n{doc_formateado}"
-                # ---------------------------------- LLM - Llama 3.1 ----------------------------------
+                    
                 full_prompt = f"""  
                 Eres un experto en publicaciones academicas de Arxiv.\n
                  Se conciso y claro en tus respuestas.\n
@@ -275,16 +303,14 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
                 **CONTESTA UNICAMENTE ESPAÑOL**\n\n               
                 {context}
                 """
-                return full_prompt.strip()#, context
+                return full_prompt.strip()
         
             except Exception as e:
-                logger.error(f"Error al crear el embedding: {e}")
+                logger.error(f"Error en la consulta de RAG_chat_V2: {e} - temporalidad: {temporalidad}")
                 return "Disculpame, me estaba sirviendo un cafe, ¿Podrías repetir la pregunta?", context
 
     else: # Chatear con el usuario
         
-        # ---------------------------------- LLM - Llama 3.1 ----------------------------------
-        #context += f'\n{ahora} Usuario: {user_input}'
         full_prompt = f"""  
         Eres un experto en publicaciones academicas de Arxiv.\n
         Se conciso y claro en tus respuestas.\n

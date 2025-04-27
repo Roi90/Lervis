@@ -11,8 +11,9 @@ import numpy as np
 from psycopg import sql
 import psycopg
 from psycopg.rows import dict_row
-from Functions.Loggers import Llama31_chatbot_log
+from Functions.Loggers import crear_logger
 
+logger = crear_logger('funciones_BDDD', 'funciones_BDDD.log')
 # ---------------------------TO DO: Crear un archivo con las variables para seguridad
 
 def conn_bbdd():
@@ -28,7 +29,13 @@ def conn_bbdd():
     DATABASE_URL = "postgresql://postgres:Quiksilver90!@localhost:5432/Lervis"
     # Crear motor de conexión
     #engine = create_engine(DATABASE_URL)
-    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
+    try:
+        # Crear conexión a la base de datos usando psycopg
+        conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
+    except Exception as e:
+        logger.error(f"Error al conectar a la base de datos: {e}")
+        raise
+
 
     return conn
 # --------------------------- Carga de datoss en la BBDD
@@ -47,24 +54,29 @@ def carga_dimension_categorias(conn):
         "codigo_categoria": list(categorias_arxiv.keys()),
         "categoria": list(categorias_arxiv.values()),
     })
-    
-    # Inserción de datos en la tabla 'categoria'
-    with conn.cursor() as cur:
-        for _, row in df.iterrows():
-            cur.execute(
-                """
-                INSERT INTO categoria (codigo_categoria, categoria)
-                VALUES (%s, %s);
-                """, (row["codigo_categoria"], row["categoria"])
-            )
-        conn.commit()
-    
-    # Extracción de datos para generar el diccionario
-    with conn.cursor() as cur:
-        cur.execute("SELECT id, codigo_categoria FROM categoria;")
-        for row in cur.fetchall():
-            categoria_dict[row['codigo_categoria']] = row['id'] 
-    
+    try:
+        # Inserción de datos en la tabla 'categoria'
+        with conn.cursor() as cur:
+            for _, row in df.iterrows():
+                cur.execute(
+                    """
+                    INSERT INTO categoria (codigo_categoria, categoria)
+                    VALUES (%s, %s);
+                    """, (row["codigo_categoria"], row["categoria"])
+                )
+            conn.commit()
+    except Exception as e:
+        logger.error(f"Error al insertar datos en la tabla 'categoria': {e}")
+        
+    try:
+        # Extracción de datos para generar el diccionario
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, codigo_categoria FROM categoria;")
+            for row in cur.fetchall():
+                categoria_dict[row['codigo_categoria']] = row['id'] 
+    except Exception as e:
+        logger.error(f"Error al recuperar datos de la tabla 'categoria': {e}")
+        raise
     return categoria_dict
 
 def carga_hechos_publicaciones(conn, df: pd.DataFrame):
@@ -82,26 +94,30 @@ def carga_hechos_publicaciones(conn, df: pd.DataFrame):
 
     columnas_para_insercion = ['titulo', 'autores','fecha_publicacion',
                           'categoria_principal', 'categorias_lista', 'url_pdf', 'identificador_arxiv']
-
-     # Inserción de datos en la tabla 'publicaciones' usando psycopg
-    with conn.cursor() as cur:
-        for _, row in df[columnas_para_insercion].iterrows():
-            cur.execute(
-                """
-                INSERT INTO publicaciones (titulo, autores, fecha_publicacion, categoria_principal,
-                                           categorias_lista, url_pdf, identificador_arxiv)
-                VALUES (%s, %s, %s, %s, %s, %s, %s);
-                """,
-                (row['titulo'], row['autores'], row['fecha_publicacion'],
-                 row['categoria_principal'], row['categorias_lista'], row['url_pdf'], row['identificador_arxiv'])
-            )
-        conn.commit()
-
-    # Extracción de datos (id, identificador_arxiv) desde la tabla 'publicaciones'
-    with conn.cursor() as cur:
-        cur.execute("SELECT id, identificador_arxiv FROM publicaciones;")
-        for row in cur.fetchall():
-            publicaciones_dict[row['identificador_arxiv']] = row['id']
+    try:
+        # Inserción de datos en la tabla 'publicaciones' usando psycopg
+        with conn.cursor() as cur:
+            for _, row in df[columnas_para_insercion].iterrows():
+                cur.execute(
+                    """
+                    INSERT INTO publicaciones (titulo, autores, fecha_publicacion, categoria_principal,
+                                            categorias_lista, url_pdf, identificador_arxiv)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s);
+                    """,
+                    (row['titulo'], row['autores'], row['fecha_publicacion'],
+                    row['categoria_principal'], row['categorias_lista'], row['url_pdf'], row['identificador_arxiv'])
+                )
+            conn.commit()
+    except Exception as e:
+        logger.error(f"Error al insertar datos en la tabla 'publicaciones': {e}")
+    try:
+        # Extracción de datos (id, identificador_arxiv) desde la tabla 'publicaciones'
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, identificador_arxiv FROM publicaciones;")
+            for row in cur.fetchall():
+                publicaciones_dict[row['identificador_arxiv']] = row['id']
+    except Exception as e:
+        logger.error(f"Error al recuperar datos de la tabla 'publicaciones': {e}")
     
     return publicaciones_dict
 
@@ -116,9 +132,13 @@ def carga_hechos_chunks_embeddings(df: pd.DataFrame, engine):
         
     Returns:
         None
-    """        
-    # Insertar el DataFrame en la base de datos, tabla 'embeddings'
-    df.to_sql('embeddings_chunks', con=engine, if_exists='append', index=False)
+    """ 
+    try:
+        # Insertar el DataFrame en la base de datos, tabla 'embeddings'
+        return df.to_sql('embeddings_chunks', con=engine, if_exists='append', index=False)
+    except Exception as e:
+        logger.error(f"Error al insertar datos en la tabla 'embeddings_chunks': {e} - id {df['id_publicaciones']}")
+        
 
 def carga_hechos_resumen_embeddings(df: pd.DataFrame, engine):
     """
@@ -132,18 +152,23 @@ def carga_hechos_resumen_embeddings(df: pd.DataFrame, engine):
     Returns:
         None
     """
-        
-    # Insertar el DataFrame en la base de datos, tabla 'embeddings'
-    df.to_sql('embeddings_resumen', con=engine, if_exists='append', index=False)
+    try:
+        # Insertar el DataFrame en la base de datos, tabla 'embeddings'
+        return df.to_sql('embeddings_resumen', con=engine, if_exists='append', index=False)
+    except  Exception as e:
+        logger.error(f"Error al insertar datos en la tabla 'embeddings_resumen': {e} - id {df['id_publicaciones']}")
 
 def carga_doc_enriquecido(documento_enriquecido, id,  conn):
-
-    id = int(id)
-    with conn.cursor() as cur:
-        cur.execute("""UPDATE publicaciones
-                    SET documento_completo = %s
-                    WHERE id = %s;""", (documento_enriquecido, id))
-        conn.commit()
+    try:
+        id = int(id)
+        with conn.cursor() as cur:
+            cur.execute("""UPDATE publicaciones
+                        SET documento_completo = %s
+                        WHERE id = %s;""", (documento_enriquecido, id))
+            conn.commit()
+    except Exception as e:
+        logger.error(f"Error al insertar datos en la tabla 'publicaciones': {e} - id {id}")
+        
 
 def normalizador_id_categoria_BBDD(df: pd.DataFrame, diccionario: dict):
     """
@@ -169,8 +194,9 @@ def normalizador_id_categoria_BBDD(df: pd.DataFrame, diccionario: dict):
         # Normaliza la columna 'categoria_principal' usando el diccionario
         df['categoria_principal'] = df['categoria_principal'].map(diccionario)
 
-    except KeyError as e:
-        raise KeyError(f"Categoría no encontrada en el diccionario de mapeo: {e}")
+    except Exception as e:
+        logger.error(f"Error al normalizar la columna 'categoria_principal': {e}")
+        raise
 
     return df[columnas_esperadas]
 
@@ -197,10 +223,14 @@ def normalizador_id_embeddings_BBDD(df: pd.DataFrame, diccionario: dict):
         # Normaliza la columna 'categoria_principal' usando el diccionario
         df['id_publicaciones'] = df['id_publicaciones'].map(diccionario)
 
-    except KeyError as e:
-        raise KeyError(f"Categoría no encontrada en el diccionario de mapeo: {e}")
+    except Exception as e:
+        logger.error(f"Error al normalizar la columna 'id_publicaciones': {e}")
+        raise
+
 
     return df[columnas_esperadas]
+
+    
 
 # ---------------------------- Recuperacion documentos y formateo para contexto
 
@@ -217,28 +247,32 @@ def similitud_coseno(embedding_denso: np.array, conn, umbral_similitud, n_docs)-
     Returns:
         list: Lista de documentos recuperados con sus similitudes.
     """
-    logger = Llama31_chatbot_log()
+
     embedding_list = embedding_denso.tolist()
-    with conn.cursor() as cur:
-        logger.info("Consultando BBDD (SIMILITUD COSENO)")
-        cur.execute("""
-                    SELECT id, id_publicaciones, chunk_emb_sparse, chunk,
-                        chunk_emb_dense <=> %s::vector AS similitud_contenido
-                    FROM embeddings_chunks
-                    WHERE (chunk_emb_dense <=> %s::vector) >= %s
-                    ORDER BY chunk_emb_dense <=> %s::vector DESC
-                    LIMIT %s;
-                    """, (embedding_list, embedding_list, umbral_similitud, embedding_list, n_docs))
-        # Recuperar los resultados
-        documentos_recuperados = cur.fetchall()
-        logger.info(f"Recuperados {len(documentos_recuperados)} documentos")
+    try:
+        with conn.cursor() as cur:
+            logger.debug("Consultando BBDD (SIMILITUD COSENO)")
+            cur.execute("""
+                        SELECT id, id_publicaciones, chunk_emb_sparse, chunk,
+                            chunk_emb_dense <=> %s::vector AS similitud_contenido
+                        FROM embeddings_chunks
+                        WHERE (chunk_emb_dense <=> %s::vector) <= %s
+                        ORDER BY chunk_emb_dense <=> %s::vector ASC
+                        LIMIT %s;
+                        """, (embedding_list, embedding_list, umbral_similitud, embedding_list, n_docs))
+            # Recuperar los resultados
+            documentos_recuperados = cur.fetchall()
+            return documentos_recuperados
+    except Exception as e:
+        logger.error(f"Error al consultar la base de datos: {e}")
+        return "No se si te he entendido bien, pero ¿Podrías detallar un poco mas tu pregunta?"
         
 
-        if not documentos_recuperados:
-            return "No se si te he entendido bien, pero ¿Podrías detallar un poco mas tu pregunta?"
+        #if not documentos_recuperados:
+        #    return "No se si te he entendido bien, pero ¿Podrías detallar un poco mas tu pregunta?"
 
         # Devolver el resumen del documento más relevante
-        return documentos_recuperados
+        #return documentos_recuperados
     
 def hstore_a_dict(hstore_str: str) -> dict:
     """
@@ -250,11 +284,15 @@ def hstore_a_dict(hstore_str: str) -> dict:
     Returns:
         dict: Diccionario resultante.
     """
-   
-    hstore_dict = dict(
-                        map(lambda x: (x[0], float(x[1])),
-                        [hstore.replace('"', '').split('=>') for hstore in hstore_str.split(', ')])  # Convertir a float
-    )
+    try:
+        hstore_dict = dict(
+                            map(lambda x: (x[0], float(x[1])),
+                            [hstore.replace('"', '').split('=>') for hstore in hstore_str.split(', ')])  # Convertir a float
+        )
+    except Exception as e:
+        logger.error(f"Error al convertir HSTORE a dict: {e}")
+        # Si no se puede convertir, devolver un diccionario vacío
+        return {}
 
     return hstore_dict
 
@@ -268,17 +306,19 @@ def reranking(documentos_recuperados, embedding_disperso):
     Returns:
         pd.DataFrame: DataFrame ordenado con los documentos re-rankeados.
     """
-    
-    df_temp = pd.DataFrame(documentos_recuperados)
-    # Transformacion de la columna hstore a dict
-    df_temp['chunk_emb_sparse'] = df_temp['chunk_emb_sparse'].apply(lambda x: hstore_a_dict(x))
-    # Creacion de la columna mediante la interseccion del conjunto de ambas claves
+    try:
+        df_temp = pd.DataFrame(documentos_recuperados)
+        # Transformacion de la columna hstore a dict
+        df_temp['chunk_emb_sparse'] = df_temp['chunk_emb_sparse'].apply(lambda x: hstore_a_dict(x))
+        # Creacion de la columna mediante la interseccion del conjunto de ambas claves
 
-    df_temp['similitud_vocabulario'] = df_temp['chunk_emb_sparse'].apply(lambda x: len(set(x.keys()).intersection(set(embedding_disperso.keys()))))
-    # Ordeno el DF por similitud de contenido y similitud de vocabulario
-    df_temp = df_temp.sort_values(by=['similitud_contenido','similitud_vocabulario'], ascending=False)
-    print(df_temp)
-    return df_temp
+        df_temp['similitud_vocabulario'] = df_temp['chunk_emb_sparse'].apply(lambda x: len(set(x.keys()).intersection(set(embedding_disperso.keys()))))
+        # Ordeno el DF por similitud de contenido y similitud de vocabulario
+        df_temp = df_temp.sort_values(by=['similitud_contenido','similitud_vocabulario'], ascending=False)
+        return df_temp
+    except Exception as e:
+        logger.error(f"Error al reordenar los documentos: {e}")
+        return df_temp
 
 def formatear_metadata(doc):
     return (
@@ -307,53 +347,56 @@ def formato_contexto_doc_recuperados(urls_usados, conn, df: pd.DataFrame, num_do
     if num_docs > len(df):
         print('El número de documentos solicitados es mayor que el número de documentos recuperados')
     else:
-        # Subconjunto de documentos recuperados
-        df_top_docs = df.head(num_docs)
-        # Extraer los IDs de los documentos
-        id_publicaciones = list(set(df_top_docs['id_publicaciones']))
-        # Extraer los ID de los Chunks
-        id_chunks = list(set(df_top_docs['id']))
-        # Formateo para correcta ejecucion de cur.execute
-        params = tuple(id_publicaciones)
-        # Formateo para poder introducir una tupla (%s, %s, %s...)
-        placeholders_id_publicaciones = sql.SQL(', ').join([sql.Placeholder() for _ in id_publicaciones])
-        
-        with conn.cursor() as cur:
-            query = sql.SQL("""SELECT 
-                        titulo,
-                        CAT.categoria,
-                        autores,
-                        fecha_publicacion,
-                        url_pdf,
-                        ER.resumen
-                        FROM publicaciones
-                        LEFT JOIN categoria as CAT
-                            ON publicaciones.categoria_principal = CAT.id
-                        LEFT JOIN embeddings_resumen as ER
-                            ON publicaciones.id = ER.id_publicaciones
-                        WHERE publicaciones.id in ({})""").format(placeholders_id_publicaciones)
-            cur.execute(query, params)
-            # Recuperar los resultados (Lista de diccionarios)
-            documentos_recuperados = cur.fetchall()
-        # Formateo e insercion de los chunks y metadatos para el contexto
-        docs_insertados = 0
-        for doc in documentos_recuperados:
-            # Se usa la secuencia del DF que esta ordenado
-            url   = doc['url_pdf'].strip()
+        try:
+            # Subconjunto de documentos recuperados
+            df_top_docs = df.head(num_docs)
+            # Extraer los IDs de los documentos
+            id_publicaciones = list(set(df_top_docs['id_publicaciones']))
+            # Extraer los ID de los Chunks
+            id_chunks = list(set(df_top_docs['id']))
+            # Formateo para correcta ejecucion de cur.execute
+            params = tuple(id_publicaciones)
+            # Formateo para poder introducir una tupla (%s, %s, %s...)
+            placeholders_id_publicaciones = sql.SQL(', ').join([sql.Placeholder() for _ in id_publicaciones])
+            
+            with conn.cursor() as cur:
+                query = sql.SQL("""SELECT 
+                            titulo,
+                            CAT.categoria,
+                            autores,
+                            fecha_publicacion,
+                            url_pdf,
+                            ER.resumen
+                            FROM publicaciones
+                            LEFT JOIN categoria as CAT
+                                ON publicaciones.categoria_principal = CAT.id
+                            LEFT JOIN embeddings_resumen as ER
+                                ON publicaciones.id = ER.id_publicaciones
+                            WHERE publicaciones.id in ({})""").format(placeholders_id_publicaciones)
+                cur.execute(query, params)
+                # Recuperar los resultados (Lista de diccionarios)
+                documentos_recuperados = cur.fetchall()
+            # Formateo e insercion de los chunks y metadatos para el contexto
+            docs_insertados = 0
+            for doc in documentos_recuperados:
+                # Se usa la secuencia del DF que esta ordenado
+                url   = doc['url_pdf'].strip()
 
-            # Compruebo que no se ha insertado para evitar duplicacion de metadatos.
-            if url not in urls_usados:
-                if docs_insertados == num_docs:
-                    break
-                    
-                else:
-                    # Nuevo documento: metadata
-                    urls_usados.add(url)
-                    documentos_formateados += formatear_metadata(doc)
-                    docs_insertados += 1
+                # Compruebo que no se ha insertado para evitar duplicacion de metadatos.
+                if url not in urls_usados:
+                    if docs_insertados == num_docs:
+                        break
+                        
+                    else:
+                        # Nuevo documento: metadata
+                        urls_usados.add(url)
+                        documentos_formateados += formatear_metadata(doc)
+                        docs_insertados += 1
 
-        return documentos_formateados
-
+            return documentos_formateados
+        except Exception as e:
+            logger.error(f"Error al formatear los documentos recuperados: {e}")
+            return ""
 
 def temporalidad_a_SQL(conn, temporalidad: tuple):
     """
@@ -363,121 +406,116 @@ def temporalidad_a_SQL(conn, temporalidad: tuple):
     Returns:
         str: Consulta SQL generada a partir de la temporalidad.
     """
-    logger = Llama31_chatbot_log()
-    if temporalidad != None:
-        # Identificacion de agregados
-        #expresiones_count = ["cuantas", "numero de", "total de", "cantidad de", "que cantidad","suma de"]
+
+    if temporalidad is not None:
         
-        #regex_count = r'\b(?:' + '|'.join(expresiones_count) + r')\b'
-
-        #if re.findall(regex_count, temporalidad[2]):
-            
         if temporalidad[0] == 'Combinada':
-            # Extraigo los meses y años del diccionario
-            meses_list = temporalidad[1]['Meses']   #  [1, 2, 3]
-            anios_list = temporalidad[1]['Anios']   #  [2023, 2024]
+            try:
+                # Extraigo los meses y años del diccionario
+                meses_list = temporalidad[1]['Meses']   #  [1, 2, 3]
+                anios_list = temporalidad[1]['Anios']   #  [2023, 2024]
 
-            # Genero los Composed de "%s, %s, %s" para cada lista
-            mes_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in meses_list)
-            anio_ph = sql.SQL(', ').join(sql.Placeholder() for _ in anios_list)
+                # Genero los Composed de "%s, %s, %s" para cada lista
+                mes_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in meses_list)
+                anio_ph = sql.SQL(', ').join(sql.Placeholder() for _ in anios_list)
 
-            # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
-            query = sql.SQL("""
-                SELECT COUNT(*) AS conteo_publicaciones
-                FROM publicaciones
-                WHERE MES  IN ({meses})
-                AND ANIO IN ({anios});
-            """).format( 
-                meses=mes_ph,  # Insercion de los placeholders de meses
-                anios=anio_ph # Insercion de los placeholders de anios
-            )
-            # Preparo la tupla de parámetros con los valores reales
-            params = tuple(meses_list) + tuple(anios_list)
-            logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
-            with conn.cursor() as cur:
-                cur.execute(query, params) # En esta llamada se rellenan los placeholders
-                result = cur.fetchone()
-                return result['conteo_publicaciones']
+                # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
+                query = sql.SQL("""
+                    SELECT COUNT(*) AS conteo_publicaciones
+                    FROM publicaciones
+                    WHERE MES  IN ({meses})
+                    AND ANIO IN ({anios});
+                """).format( 
+                    meses=mes_ph,  # Insercion de los placeholders de meses
+                    anios=anio_ph # Insercion de los placeholders de anios
+                )
+                # Preparo la tupla de parámetros con los valores reales
+                params = tuple(meses_list) + tuple(anios_list)
+                logger.debug(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
+                with conn.cursor() as cur:
+                    cur.execute(query, params) # En esta llamada se rellenan los placeholders
+                    result = cur.fetchone()
+                    return result['conteo_publicaciones']
+            except Exception as e:
+                logger.error(f"Error al consultar la base de datos: {e} en {temporalidad}")
+                return None
         
         elif temporalidad[0] == 'Mes': # Fomato en lista
 
-            meses_list = temporalidad[1]
-            # Genero los Composed de "%s, %s, %s" para la lista
-            mes_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in meses_list)
+            try:
 
-            # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
-            query = sql.SQL("""
-                SELECT COUNT(*) AS conteo_publicaciones
-                FROM publicaciones
-                WHERE MES  IN ({meses});
-            """).format( 
-                meses=mes_ph,  # Insercion de los placeholders de meses
-            )
-            # Preparo la tupla de parámetros con los valores reales
-            params = tuple(meses_list)
-            logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
-            with conn.cursor() as cur:
-                cur.execute(query, params) # En esta llamada se rellenan los placeholders
-                result = cur.fetchone()
-                return result['conteo_publicaciones']
+                meses_list = temporalidad[1]
+                # Genero los Composed de "%s, %s, %s" para la lista
+                mes_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in meses_list)
+
+                # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
+                query = sql.SQL("""
+                    SELECT COUNT(*) AS conteo_publicaciones
+                    FROM publicaciones
+                    WHERE MES  IN ({meses});
+                """).format( 
+                    meses=mes_ph,  # Insercion de los placeholders de meses
+                )
+                # Preparo la tupla de parámetros con los valores reales
+                params = tuple(meses_list)
+                logger.debug(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
+                with conn.cursor() as cur:
+                    cur.execute(query, params) # En esta llamada se rellenan los placeholders
+                    result = cur.fetchone()
+                    return result['conteo_publicaciones']
+            except Exception as e:
+                logger.error(f"Error al consultar la base de datos: {e} en {temporalidad}")
+                return None
             
         elif temporalidad[0] == 'Anio': # Fomato en lista
 
-            anios_list = temporalidad[1]
-            # Genero los Composed de "%s, %s, %s" para la lista
-            anios_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in anios_list)
+            try:
+                anios_list = temporalidad[1]
+                # Genero los Composed de "%s, %s, %s" para la lista
+                anios_ph  = sql.SQL(', ').join(sql.Placeholder() for _ in anios_list)
 
-            # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
-            query = sql.SQL("""
-                SELECT COUNT(*) AS conteo_publicaciones
-                FROM publicaciones
-                WHERE ANIO  IN ({anios});
-            """).format( 
-                anios=anios_ph,  # Insercion de los placeholders de anios
-            )
-            # Preparo la tupla de parámetros con los valores reales
-            params = tuple(anios_list) 
-            logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
-            with conn.cursor() as cur:
-                cur.execute(query, params) # En esta llamada se rellenan los placeholders
-                result = cur.fetchone()
-                return result['conteo_publicaciones']
+                # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
+                query = sql.SQL("""
+                    SELECT COUNT(*) AS conteo_publicaciones
+                    FROM publicaciones
+                    WHERE ANIO  IN ({anios});
+                """).format( 
+                    anios=anios_ph,  # Insercion de los placeholders de anios
+                )
+                # Preparo la tupla de parámetros con los valores reales
+                params = tuple(anios_list) 
+                logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
+                with conn.cursor() as cur:
+                    cur.execute(query, params) # En esta llamada se rellenan los placeholders
+                    result = cur.fetchone()
+                    return result['conteo_publicaciones']
+            except Exception as e:
+                logger.error(f"Error al consultar la base de datos: {e} en {temporalidad}")
+                return None
         
         # Expresiones temporales   
         elif temporalidad[0] == 'EXP': # Fomato en lista
-            
-            exp_dias = int(temporalidad[1])
-            # Genero los Composed de "%s, %s, %s"
-            #exp_ph  = sql.SQL(', ').join(exp_list)
+            try:
+                exp_dias = int(temporalidad[1])
+                # Genero los Composed de "%s, %s, %s"
+                #exp_ph  = sql.SQL(', ').join(exp_list)
 
-            # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
-            # Se usan los dias para sustraer a la fecha de la consulta.
-            query = """
-                SELECT COUNT(*) AS conteo_publicaciones
-                FROM publicaciones
-                WHERE fecha_publicacion = CURRENT_DATE - %s;
-            """
-            logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
-            with conn.cursor() as cur:
-                cur.execute(query, (exp_dias,)) # Creacion de tupla por psycopg
-                result = cur.fetchone()
-                return result['conteo_publicaciones']
+                # Uso de sql.SQL + .format() para que los placeholders puedan ser usados por psycopg
+                # Se usan los dias para sustraer a la fecha de la consulta.
+                query = """
+                    SELECT COUNT(*) AS conteo_publicaciones
+                    FROM publicaciones
+                    WHERE fecha_publicacion = CURRENT_DATE - %s;
+                """
+                logger.info(f"Consultando BBDD (TEMPORALIDAD) {temporalidad[0]}")
+                with conn.cursor() as cur:
+                    cur.execute(query, (exp_dias,)) # Creacion de tupla por psycopg
+                    result = cur.fetchone()
+                    return result['conteo_publicaciones']
+            except Exception as e:
+                logger.error(f"Error al consultar la base de datos: {e} en {temporalidad}")
+                return None
 
 
-        return None
-
-# ------ TESTEO
-#conn =  conn_bbdd()
-#model = carga_BAAI()
-#txt = 'Overall, the image appears to be a collection of different animal images, with a variety of colors and textures.The image is a set of six bar graphs that show the number of people who have been diagnosed with cancer. '
-#htore ='''"5"=>"0.04694", "13"=>"0.01945", "42"=>"0.0347", "70"=>"0.006874"'''
-#print(hstore_a_dict(htore))
-
-#embedding_denso, embedding_disperso = embedding(txt,model)
-#valor = similitud_coseno(embedding_denso, conn_bbdd())
-#df_temp = reranking(valor,embedding_disperso)
-#print(df_temp)
-#doc_format = formato_contexto_doc_recuperados(conn, df_temp, num_docs=3)
-
-#print(doc_format)
+    return None
 

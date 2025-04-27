@@ -1,8 +1,11 @@
 
+from datetime import time
 from FlagEmbedding import BGEM3FlagModel
-from Functions.Loggers import BAAI_log
-from langchain_ollama import OllamaEmbeddings
-import timeit
+
+from Functions.Loggers import crear_logger
+
+
+logger = crear_logger('Embedding', 'Embedding.log')
 
 def embedding(text, model):
     """
@@ -15,10 +18,16 @@ def embedding(text, model):
         numpy.ndarray: Los embeddings del texto de entrada.
     """
 
-    logger = BAAI_log()
     try:
+        inicio = time.time()
+
         embeddings = model.encode(text, return_dense=True,return_sparse=True,return_colbert_vecs=False,batch_size=12,max_length=6000)
-        logger.debug(f"Embeddings creados con exito")
+        len_dense_embeddings = len(embeddings['dense_vecs'])
+        len_sparse_embeddings = len(embeddings['lexical_weights'])
+        len_text = len(text)
+        fin = time.time() 
+        duracion_segundos = fin - inicio
+        logger.debug(f"Caracteres Text - {len_text}, Duracion segundos - {duracion_segundos:.2f}, Longitud Denso - {len_dense_embeddings}, Longitud Disperso - {len_sparse_embeddings}")
     except Exception as e:
         logger.error(f"Error al crear los embeddings: {e}")
 
@@ -35,21 +44,11 @@ def carga_BAAI():
         Returns:
             model (BGEM3FlagModel): El modelo BGEM3 cargado.
         """
+    try:
+        model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)   
+        logger.info(f"Modelo 'BAAI/bge-m3' cargado con exito.")
 
-    logger = BAAI_log()
-
-    model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)   
-    logger.info(f"Modelo 'BAAI/bge-m3' cargado con éxito.")
-
-    return model
-
-## TESTEO
-
-#model = carga_BAAI()
-
-#txt ='Most 3D object generators focus on aesthetic quality, often neglecting physical asdad asd sad asd constraints necessary in applications.One such constraint is that the 3D object should be self-supporting, i.e., remains balanced under gravity.'
-
-#a,b = embedding(txt,model)
-#tiempo = timeit.timeit(lambda: embedding(txt,model), number=10)
-#print(tiempo/10)
-#print(a)
+        return model
+    except Exception as e:
+        logger.error(f"Error al cargar el modelo 'BAAI/bge-m3': {e}")
+        raise

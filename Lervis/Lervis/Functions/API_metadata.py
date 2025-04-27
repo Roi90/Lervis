@@ -8,11 +8,15 @@ Fecha: 08/03/2024
 """
 from Static_data import categorias_arxiv
 import requests
-from Functions.Loggers import extraccion_metadatos_log
+from Functions.Loggers import crear_logger
 import feedparser
 import pandas as pd
 from datetime import datetime, timedelta
 from tqdm import tqdm
+
+# Se define el logger para todo el modulo
+logger = crear_logger('Extraccion_arxiv', 'extraccion_arxiv.log')
+
 
 def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='submittedDate', orden_descendente=True):
     """
@@ -32,8 +36,7 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='sub
     Retorna:
     --------
     DataFrame de pandas con las publicaciones encontradas
-    """
-    logger = extraccion_metadatos_log()
+    """        
 
     logger.debug(f"Iniciando búsqueda de publicaciones en arXiv para categoría: {categoria}")
     logger.debug(f"Parámetros: max_resultados={max_resultados}, ordenar_por={ordenar_por}, orden_descendente={orden_descendente}")
@@ -120,8 +123,6 @@ def extraccion_por_categorias(conn, max_resultados=1000):
     --------
     DataFrame de pandas con los metadatos de las publicaciones descargadas de todas las categorías.
     """
-    # Definicion del logger
-    logger = extraccion_metadatos_log()
     df_lst = []
     for i in tqdm(categorias_arxiv.keys()):
         print(f' Extrayendo la categoria: {categorias_arxiv[i]}...')

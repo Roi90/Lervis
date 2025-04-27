@@ -5,13 +5,13 @@ from flask_sqlalchemy import SQLAlchemy
 
 
 
-from Functions.Chatbot_functions import  Llama3_1_API, RAG_chat_V2, actualizacion_informacion_inicial, eliminacion_acentos, limitador_contexto
+from Functions.Chatbot_functions import  Llama3_1_API, RAG_chat_V2, actualizacion_informacion_inicial,  limitador_contexto
 from Functions.Embeddings import carga_BAAI
-from Functions.Loggers import Llama31_chatbot_log
+from Functions.Loggers import crear_logger
 from Functions.BBDD_functions import conn_bbdd
 from Functions.MarianMT_traductor import carga_modelo_traductor
 
-logger = Llama31_chatbot_log()
+logger = crear_logger('Flask', 'Flask.log')
 conn = conn_bbdd()
 info_inicial = actualizacion_informacion_inicial()
 modelo_BAAI = carga_BAAI()
@@ -56,6 +56,7 @@ def chat_page():
 @app.route('/reset', methods=['POST'])
 def reset():
     session.pop('context', None)
+    logger.debug(f"Contexto reseteado - session_id {session.sid}")
     return ('', 204)
 
 # Ruta que ejecuta las funciones del chat
@@ -67,7 +68,7 @@ def chat():
     data = request.json
     user_input = data['message']
 
-    context = session.get('context', f'{info_inicial}\n')
+    context = session.get('context', f'{info_inicial}\n \n{ahora} - Usuario: {user_input}')
 
     #context += f"\n\n{ahora} - Usuario: {user_input}"
     context = limitador_contexto(context)
@@ -84,7 +85,6 @@ def chat():
             logger=logger,
             conn=conn,
             embedding_model=modelo_BAAI,
-            ahora=ahora,
             traductor_model=traductor_model,
             traductor_tokenizer=traductor_tokenizer
         )
@@ -96,8 +96,6 @@ def chat():
     def generate():
         for token in Llama3_1_API(full_prompt):
             yield token 
-
-
 
     return Response(
         # Respuesta por tokens, es decir, es stream
@@ -119,18 +117,16 @@ def save_context():
     ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
     # Si no hay contexto se crea uno nuevo junto con la informacion inicial
     contexto_nuevo = session.get('context', f'{info_inicial}\n\n{ahora} - Lervis: Bienvenido a Lervis')
-    #print(f"🟡 Contexto antes de agregar:", contexto_nuevo)
 
+    # Se apendiza el input del usuario y la respuesta de Lervis al contexto
     contexto_nuevo += f"\n\n{ahora} - Usuario: {input_usuario}"
     contexto_nuevo += f"\n\n{ahora} - Lervis: {respuesta_lervis}"
     session['context'] = limitador_contexto(contexto_nuevo)
     session.modified = True
-
-    #print(f"🟢 Contexto actualizado:", session['context'])
-
     return '', 204
 
 
 if __name__ == '__main__':
     print("🟢 Iniciando la app Flask...🟢")
+    logger.debug(f"Iniciando la app Flask ")
     app.run(debug=False, threaded=True)

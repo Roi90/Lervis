@@ -6,12 +6,13 @@ Autor: Roi Pereira Fiuza
 Fecha: 11/03/2024
 """
 
+from Functions.Loggers import create_logger
 from transformers import AutoProcessor, AutoModelForCausalLM  
 from PIL import Image
 import torch
 import time
-from Functions.Loggers import Florence_log
 
+logger = create_logger('Florence2', 'florence2.log')
 
 def Carga_FLorence2_modelo():
     """
@@ -27,7 +28,6 @@ def Carga_FLorence2_modelo():
     tuple
         Una tupla que contiene el identificador del modelo, el modelo y el procesador.
     """
-    logger = Florence_log()
     model_id='microsoft/Florence-2-large'
     logger.info(f"Modelo {model_id} cargado con éxito.")
 
@@ -49,9 +49,7 @@ def Florence2_detailed_annotation(model, processor, image: Image, task_prompt='<
         text_input (str, opcional): Entrada de texto adicional que se añadirá al prompt de la tarea. Por defecto es None.
     Returns:
         str: La anotación detallada generada para la imagen.
-    """
-
-    logger = Florence_log()   
+    """  
     
     if text_input is None:
         prompt = task_prompt

@@ -1,5 +1,7 @@
 from transformers import MarianMTModel, MarianTokenizer
+from Functions.Loggers import crear_logger
 
+logger = crear_logger('Traductor', 'Traductor.log')
 
 def carga_modelo_traductor(src_lang="es"):
     """
@@ -13,21 +15,28 @@ def carga_modelo_traductor(src_lang="es"):
         model: Modelo de traducción cargado.
         tokenizer: Tokenizador cargado.
     """
-    model_name = f'Helsinki-NLP/opus-mt-{src_lang}-{"en"}'
-    model = MarianMTModel.from_pretrained(model_name)
-    tokenizer = MarianTokenizer.from_pretrained(model_name)
+    try:
+        model_name = f'Helsinki-NLP/opus-mt-{src_lang}-{"en"}'
+        model = MarianMTModel.from_pretrained(model_name)
+        tokenizer = MarianTokenizer.from_pretrained(model_name)
 
-    return model, tokenizer
+        return model, tokenizer
+    except Exception as e:
+        logger.error(f"Error al cargar el modelo de traducción: {e}")
+        raise
 
 def translate_text(model, tokenizer, text):
-    
-    # Tokeniza el texto
-    translated = model.generate(**tokenizer(text, return_tensors="pt", padding=True))
+    try:
+        # Tokeniza el texto
+        translated = model.generate(**tokenizer(text, return_tensors="pt", padding=True))
 
-    # Decodifica el resultado
-    result = tokenizer.decode(translated[0], skip_special_tokens=True)
+        # Decodifica el resultado
+        result = tokenizer.decode(translated[0], skip_special_tokens=True)
 
-    return result
+        return result
+    except Exception as e:
+        logger.error(f"Error al traducir el texto: {e}")
+        return text
 
 
 
