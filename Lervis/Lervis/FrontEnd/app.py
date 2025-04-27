@@ -13,6 +13,7 @@ from Functions.MarianMT_traductor import carga_modelo_traductor
 
 logger = Llama31_chatbot_log()
 conn = conn_bbdd()
+info_inicial = actualizacion_informacion_inicial()
 modelo_BAAI = carga_BAAI()
 info_inicial = actualizacion_informacion_inicial()
 traductor_model, traductor_tokenizer = carga_modelo_traductor()
@@ -66,9 +67,9 @@ def chat():
     data = request.json
     user_input = data['message']
 
-    context = session.get('context', f'{ahora} - Lervis: Bienvenido a Lervis')
+    context = session.get('context', f'{info_inicial}\n')
 
-    context += f"\n\n{ahora} - Usuario: {user_input}"
+    #context += f"\n\n{ahora} - Usuario: {user_input}"
     context = limitador_contexto(context)
 
     print("\n🟡 CONTEXTO ANTES DEL RAG_chat_V2:")
@@ -116,7 +117,8 @@ def save_context():
     #print(f"🔵 Respuesta recibida en /save_context: {respuesta_lervis}")
 
     ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
-    contexto_nuevo = session.get('context', f'\n\n{ahora} - Lervis: Bienvenido a Lervis')
+    # Si no hay contexto se crea uno nuevo junto con la informacion inicial
+    contexto_nuevo = session.get('context', f'{info_inicial}\n\n{ahora} - Lervis: Bienvenido a Lervis')
     #print(f"🟡 Contexto antes de agregar:", contexto_nuevo)
 
     contexto_nuevo += f"\n\n{ahora} - Usuario: {input_usuario}"
