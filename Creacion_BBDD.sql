@@ -12,18 +12,34 @@ CREATE TABLE IF NOT EXISTS public.categoria
     CONSTRAINT categoria_codigo_categoria_key UNIQUE (codigo_categoria)
 );
 
-CREATE TABLE IF NOT EXISTS public.embeddings
+CREATE TABLE IF NOT EXISTS public.embeddings_chunks
 (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
     id_publicaciones bigint NOT NULL,
-    contenido text COLLATE pg_catalog."default" NOT NULL,
-    contenido_emb_dense vector NOT NULL,
-    contenido_emb_sparse hstore NOT NULL,
+    chunk text COLLATE pg_catalog."default" NOT NULL,
+    chunk_emb_dense vector NOT NULL,
+    chunk_emb_sparse hstore NOT NULL,
+    CONSTRAINT embeddings_chunks_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.embeddings_resumen
+(
+    id bigint NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 9223372036854775807 CACHE 1 ),
+    id_publicaciones bigint NOT NULL,
     resumen text COLLATE pg_catalog."default" NOT NULL,
     resumen_emb_dense vector NOT NULL,
     resumen_emb_sparse hstore NOT NULL,
-    CONSTRAINT embeddings_pkey PRIMARY KEY (id),
-    CONSTRAINT embeddings_id_publicaciones_key UNIQUE (id_publicaciones)
+    CONSTRAINT embeddings_resumen_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.flask_sessions
+(
+    id serial NOT NULL,
+    session_id character varying(255) COLLATE pg_catalog."default",
+    data bytea,
+    expiry timestamp without time zone,
+    CONSTRAINT flask_sessions_pkey PRIMARY KEY (id),
+    CONSTRAINT flask_sessions_session_id_key UNIQUE (session_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.publicaciones
@@ -36,17 +52,26 @@ CREATE TABLE IF NOT EXISTS public.publicaciones
     categorias_lista text COLLATE pg_catalog."default" NOT NULL,
     url_pdf text COLLATE pg_catalog."default" NOT NULL,
     identificador_arxiv text COLLATE pg_catalog."default" NOT NULL,
+    documento_completo text COLLATE pg_catalog."default",
+    anio integer GENERATED ALWAYS AS ((EXTRACT(year FROM fecha_publicacion))::integer) STORED,
+    mes integer GENERATED ALWAYS AS ((EXTRACT(month FROM fecha_publicacion))::integer) STORED,
+    dia integer GENERATED ALWAYS AS ((EXTRACT(day FROM fecha_publicacion))::integer) STORED,
     CONSTRAINT publicaciones_pkey PRIMARY KEY (id),
     CONSTRAINT publicaciones_identificador_arxiv_key UNIQUE (identificador_arxiv)
 );
 
-ALTER TABLE IF EXISTS public.embeddings
+ALTER TABLE IF EXISTS public.embeddings_chunks
     ADD CONSTRAINT fk_id_publicaciones FOREIGN KEY (id_publicaciones)
     REFERENCES public.publicaciones (id) MATCH SIMPLE
     ON UPDATE CASCADE
     ON DELETE CASCADE;
-CREATE INDEX IF NOT EXISTS embeddings_id_publicaciones_key
-    ON public.embeddings(id_publicaciones);
+
+
+ALTER TABLE IF EXISTS public.embeddings_resumen
+    ADD CONSTRAINT fk_id_publicaciones FOREIGN KEY (id_publicaciones)
+    REFERENCES public.publicaciones (id) MATCH SIMPLE
+    ON UPDATE CASCADE
+    ON DELETE CASCADE;
 
 
 ALTER TABLE IF EXISTS public.publicaciones
