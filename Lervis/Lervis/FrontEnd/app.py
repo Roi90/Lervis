@@ -18,6 +18,8 @@ modelo_BAAI = carga_BAAI()
 info_inicial = actualizacion_informacion_inicial()
 traductor_model, traductor_tokenizer = carga_modelo_traductor()
 
+logger = crear_logger('app', 'app.log')
+
 urls_usados   = set()
 # variable que contiene la app Flask
 app = Flask(__name__) 
@@ -90,7 +92,8 @@ def chat():
         )
         
     except Exception as e:
-        print(f"Error en RAG_chat_V2: {e}")
+        logger.error(f"Error en RAG_chat_V2: {e}")
+        # Si hay un error en la funcion RAG_chat_V2 se devuelve un mensaje de error al usuario
         return Response("Perdon, se me cruzaron los cables, ¿Podrías repetirlo?")
         
     def generate():
