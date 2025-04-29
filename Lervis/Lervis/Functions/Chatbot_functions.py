@@ -7,6 +7,7 @@ import json
 import re
 import pandas as pd
 from datetime import datetime,timedelta
+import time
 from ollama import chat
 
 from Functions.Embeddings import embedding, carga_BAAI
@@ -16,6 +17,8 @@ from Functions.BBDD_functions import similitud_coseno, reranking, formato_contex
 from Functions.MarianMT_traductor import carga_modelo_traductor, translate_text
 
 logger = crear_logger('Funciones_Chatbot', 'Funciones_Chatbot.log')
+logger_llama = crear_logger('Llama3_1', 'Llama3_1.log')
+logger_llama_intencion = crear_logger('Llama3_1_intencion', 'Llama3_1_intencion.log')
 
 def eliminacion_acentos(user_input: str) -> str:
     """
@@ -208,20 +211,20 @@ def deteccion_intencion(user_input: str) -> str:
             respuesta_json = json.loads(texto_respuesta)
             intencion = respuesta_json.get("intencion")
             if intencion  in ["consultar", "hablar"]:
-                logger.debug(f"Input usuario - {user_input}, Intencion detectada - {respuesta_json}")
-                logger.debug(f"Tokens de entrada - {response['prompt_eval_count']}, Tokens generados - {response['eval_count']},  Duracion Segundos - {duracion_segundos}")
+                logger_llama_intencion.debug(f"Input usuario - {user_input}, Intencion detectada - {respuesta_json}")
+                logger_llama_intencion.debug(f"Tokens de entrada - {response['prompt_eval_count']}, Tokens generados - {response['eval_count']},  Duracion Segundos - {duracion_segundos:.2f}")
                 return intencion
             else:
-                logger.error(f"Respuesta inesperada del modelo: {texto_respuesta}")
+                logger_llama_intencion.error(f"Respuesta inesperada del modelo: {texto_respuesta},Input usuario {user_input}")
                 # En caso de respuesta inesperada, se habla
                 return "hablar"
         except json.JSONDecodeError:
-            logger.error(f"Error al decodificar JSON: {texto_respuesta}")
+            logger_llama_intencion.error(f"Error al decodificar JSON: {texto_respuesta}")
             # En caso de error en el JSON, se habla
             return "hablar"
 
     except Exception as e:
-        logger.error(f"Error detectando intención: {e}")
+        logger_llama_intencion.error(f"Error detectando intención: {e}")
         # En caso de error, se habla
         return "hablar"
 
@@ -237,20 +240,23 @@ def Llama3_1_API(prompt):
 
         for part in stream:
             if "message" in part:
+                if part.get("done", False):
+                    # Verificacion de que el streaming ha terminado
+                    try:
+                        duracion_segundos = part['total_duration'] / 1e9
+                        if duracion_segundos > 0:
+                            token_segundo = part['eval_count'] / duracion_segundos
+                        else:
+                            token_segundo = 0
+                        logger_llama.debug(f"Tokens de entrada - {part['prompt_eval_count']}, Tokens generados - {part['eval_count']},  Duracion Segundos - {duracion_segundos:.2f}, Token por segundo - {token_segundo:.2f}")
+                    except Exception as e:
+                        logger_llama.error(f"Error extrayendo metricas del modelo: {e}")
+                
                 yield part["message"]["content"]
-            # Se verifica que el Stream a terminado
-            elif part.get("done", False):
-                try:
-                    duracion_segundos = part['total_duration'] / 1e9
-                    if duracion_segundos > 0:
-                        token_segundo = part['eval_count'] / duracion_segundos
-                    else:
-                        token_segundo = 0
-                    logger.debug(f"Tokens de entrada - {part['prompt_eval_count']}, Tokens generados - {part['eval_count']},  Duracion Segundos - {duracion_segundos:.2f}, Token por segundo - {token_segundo:.2f}")
-                except Exception as e:
-                    logger.error(f"Error extrayendo metricas del modelo: {e}")
+ 
+                
     except Exception as e:
-        logger.error(f"Error en la API de Llama3.1: {e}")
+        logger_llama.error(f"Error en la API de Llama3.1: {e}")
         yield "Lo siento, hubo un error al procesar tu solicitud."
 
 
@@ -262,6 +268,7 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
         if temporalidad is not None:
             
             try:
+                logger.debug(f"Temporalidad detectada: {temporalidad}")
                 #user_input = translate_text(traductor_model, traductor_tokenizer, user_input)
                 consulta = temporalidad_a_SQL(conn,temporalidad)
                 # Apendizo al contexto

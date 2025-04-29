@@ -29,7 +29,7 @@ def Carga_FLorence2_modelo():
         Una tupla que contiene el identificador del modelo, el modelo y el procesador.
     """
     model_id='microsoft/Florence-2-large'
-    logger.info(f"Modelo {model_id} cargado con éxito.")
+    logger.info(f"Modelo {model_id} cargado con exito.")
 
     model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype='auto').eval().to('cuda')
     processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
@@ -73,6 +73,6 @@ def Florence2_detailed_annotation(model, processor, image: Image, task_prompt='<
     )
     timestamp_elapsed = time.time()
     duracion = timestamp_elapsed - timestamp
-    logger.debug(f"Tiempo de inferencia - {duracion:.2f} segundos, Caracteres generados - {len(parsed_answer)} , Alto Imagen - {image.height}, Ancho Imagen - {image.width}")
+    logger.debug(f"Duracion segundos - {duracion:.2f}, Caracteres generados - {len(parsed_answer)} , Alto Imagen - {image.height}, Ancho Imagen - {image.width}")
 
     return parsed_answer

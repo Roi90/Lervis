@@ -1,4 +1,4 @@
-from datetime import time
+import time
 from transformers import MarianMTModel, MarianTokenizer
 from Functions.Loggers import crear_logger
 

@@ -1,5 +1,5 @@
 
-from datetime import time
+import time
 from FlagEmbedding import BGEM3FlagModel
 import numpy as np
 from Functions.Loggers import crear_logger
@@ -43,7 +43,7 @@ def embedding(text, model):
 
         duracion_segundos = fin - inicio
 
-        logger.debug(f"Caracteres Text - {len_text}, Input tokens - {num_tokens}, Duracion segundos - {duracion_segundos:.2f}, Longitud Denso - {len_dense_embeddings}, Longitud Disperso - {len_sparse_embeddings}")
+        logger.debug(f"Caracteres Text - {len_text}, Input tokens - {num_tokens}, Duracion segundos - {duracion_segundos:.2f}, Longitud Denso - {len_dense_embeddings}, Longitud Disperso - {len_sparse_embeddings}, Norma L2 - {norma_L2:.2f}")
         
         return embeddings_denso,embedding_disperso
     except Exception as e:

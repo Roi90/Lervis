@@ -314,7 +314,7 @@ def reranking(documentos_recuperados, embedding_disperso):
 
         df_temp['similitud_vocabulario'] = df_temp['chunk_emb_sparse'].apply(lambda x: len(set(x.keys()).intersection(set(embedding_disperso.keys()))))
         # Ordeno el DF por similitud de contenido y similitud de vocabulario
-        df_temp = df_temp.sort_values(by=['similitud_contenido','similitud_vocabulario'], ascending=False)
+        df_temp = df_temp.sort_values(by=['similitud_contenido','similitud_vocabulario'], ascending=[True, False])
         return df_temp
     except Exception as e:
         logger.error(f"Error al reordenar los documentos: {e}")
