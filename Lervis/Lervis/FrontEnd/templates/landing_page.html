@@ -28,42 +28,69 @@
   <script>
     window.addEventListener('DOMContentLoaded', function () {
       particlesJS('particles-js', {
+        // Configuración de Particulas
         particles: { number: { value: 300 }, color: { value: '#ffffff' }, shape: { type: 'circle' }, opacity: { value: 0.2 }, size: { value: 3 },
           line_linked: { enable: true, distance: 250, color: '#7DF9FF', opacity: 0.4, width: 0.5 }, move: { enable: true, speed: 2 }
         },
+        // Configuración de interaccion con el raton
         interactivity: { detect_on: 'window', events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } }, modes: { repulse: { distance: 125, duration: 0.5 }, push: { particles_nb: 5 } } },
         retina_detect: true
       });
 
-      // Función para repulsar partículas a lo largo de la pantalla
-      function repulseAtProgress(progress) {
-        const x = progress * window.innerWidth;
+      // Función para repulsar partículas como si el ratón se moviera
+      // Esta función simula el movimiento del ratón en la posición (x, y) para activar la repulsión de partículas
+      function repulsionInicial(progreso) {
+
+        // Calcula la posición horizontal en base al progreso (0 a 1) y el ancho de la ventana
+        const x = progreso * window.innerWidth;
+        // Fija la posición vertical en el centro de la pantalla
         const y = window.innerHeight / 2;
-        window.dispatchEvent(new MouseEvent('mousemove', { clientX: x, clientY: y, bubbles: true }));
+        // Simula el movimiento del ratón en esas coordenadas para activar la repulsión de partículas
+        window.dispatchEvent(
+          new MouseEvent('mousemove', {
+            clientX: x,       // posición horizontal simulada
+            clientY: y,       // posición vertical simulada
+            bubbles: true     // permite que el evento se propague en el DOM
+          })
+        );
       }
 
       // Función máquina de escribir con repulsión variable
-      function typeWriter(el, text, delay, callback) {
+      function typeWriter(elemento, text, delay, callback) {
+        // Inicializa el índice del carácter actual a imprimir
         let i = 0;
+        // Calcula el número total de caracteres que se van a escribir
         const total = text.length;
+        // Función interna que imprime un carácter en cada llamada
         function type() {
+          // Mientras queden caracteres por escribir
           if (i < total) {
-            el.textContent += text.charAt(i);
-            // Repulsión desde la izquierda hasta la derecha
-            repulseAtProgress(i / (total - 1));
+            // Añade el siguiente carácter al contenido del elemento
+            elemento.textContent += text.charAt(i);
+            // Simula un evento de ratón
+            repulsionInicial(i / (total - 1));
+            // Pasa al siguiente carácter
             i++;
+
+            // Llama recursivamente a 'type' después de un retraso definido
             setTimeout(type, delay);
           } else if (callback) {
+            // Si se ha completado el texto y hay una función callback, la ejecuta
             callback();
           }
         }
-        el.textContent = '';
+
+        // Limpia el contenido del elemento antes de comenzar a escribir
+        elemento.textContent = '';
+        // Inicia el efecto de máquina de escribir
         type();
       }
-
+      // Se declaran los elementos HTML que se van a utilizar
       const h1 = document.getElementById('typewriter');
       const p = document.getElementById('typewriter2');
       const btn = document.getElementById('enter-btn');
+      // Se inicia el efecto de máquina de escribir primero en el titulo y una
+      // vez termina el subtitulo comienza
       typeWriter(h1, h1.getAttribute('data-text'), 75, function() {
         btn.style.visibility = 'visible';
         typeWriter(p, p.getAttribute('data-text'), 50, function() {

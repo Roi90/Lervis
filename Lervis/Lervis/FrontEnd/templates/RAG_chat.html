@@ -23,114 +23,151 @@
 
   <script>
     window.onload = () => {
-      // referencias a los elementos del DOM
-      const resetBtn = document.getElementById("reset-button");
-      const input = document.getElementById("user-input");
-      const chatBox = document.getElementById("chat-box");
-      const sendButton = document.getElementById("send-button");
+      // Se declaran los objetos del DOM
+      const resetBtn = document.getElementById("reset-button"); // Boton de reseto de la conversación
+      const input = document.getElementById("user-input"); // Input de texto para el usuario
+      const chatBox = document.getElementById("chat-box"); // Caja de chat donde se muestran los mensajes
+      const sendButton = document.getElementById("send-button"); // Boton de enviar mensaje
 
+      // Boton para resetear la conversación
       resetBtn.addEventListener("click", async () => {
-        console.log("🔵 Botón de reset pulsado");
+        //console.log("Botón de reset pulsado");
+        // Se declara una variable para que envie una peticion POST al servidor
+        // y espere la respuesta de este
         const res = await fetch("/reset", { method: "POST" });
-        if (res.ok) {
-          console.log("🟢 Sesión reseteada correctamente");
+        if (res.ok) { // Si la respuesta es correcta del servidor
+          //console.log("Sesión reseteada correctamente");
+          //Vacia el chatBox, es decir, todas las interacciones del usuario y el modelo
           chatBox.innerHTML = "";
+          //Vacia el input
           input.value = "";
         }
       });
 
+      // Función asincrónica que lee datos en streaming desde un reader y los muestra en el chat
       async function readStream(reader, decoder, content, chatBox) {
-        console.log("🟠 Empezando a leer el stream...");
+        //console.log("Leyendo stream");
+        // Variable para almacenar todo el stream
         let chunkTotal = "";
 
         while (true) {
+          // Variable en formato de tupla que usa un reader para leer el stream, y espera a que haya datos disponibles
           const { done, value } = await reader.read();
-          if (done) {
-            console.log("🟢 Stream terminado");
+          if (done) { // Si el stream ha terminado
+            //console.log("Stream terminado");
+            // se sale del bucle
             break;
           }
-
+          // Decodifica el valor recibido (Uint8Array) en modo stream
           let chunk = decoder.decode(value, { stream: true });
-          //console.log("🧩 Chunk recibido:", chunk);
+          //console.log("Chunk recibido:", chunk);
+          // Se apendiza el chunk al total
           chunkTotal += chunk;
+          // Actualiza el contenido del mensaje en el chat
+          // Al incrementandose mediante chunks, el efecto es el mismo que el typewriter
           content.textContent = chunkTotal;
+          // Si el contenido supera el tamaño del chatBox, se empuja hacia y se incrementa el tamaño
           chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        console.log("🟡 Texto final acumulado del stream:", chunkTotal);
+        //console.log("Respuesta final del stream:", chunkTotal);
+        // Devuelve la salida del modelo (IMPORTANTE PARA GUARDAR EL CONTEXTO)
         return chunkTotal;
       }
 
+      // Funcion asincrona que envia el mensaje al servidor y llama a la funcion readStream
       async function sendMessage() {
+        // Extrae el input del usuario (caja donde se escribe)
         const message = input.value.trim();
         if (!message) {
-          console.log("⚪ Input vacío, no se envía nada");
+          // Por si se pulsa el boton sin nada nada se devuelve
           return;
         }
 
-        console.log("🔵 Enviando mensaje:", message);
-
+        //console.log("Enviando mensaje:", message);
+        // Se crea un nuevo elemento DOM para el mensaje del usuario
         const userMsg = document.createElement("div");
+        // Se definen sus propiedades para asociarlas con el CSS
         userMsg.className = "message user";
         userMsg.textContent = message;
+        // Aqui es donde se inserta en el chatBox, esta funcion siempre sigue un orden secuencial
+        // y por eso se agrega el mensaje debajo de los otros mensajes.
+        // El chabot esta compuesto de nodos input
         chatBox.appendChild(userMsg);
+
+        // Limpia el input del usuario
         input.value = "";
 
+        // IMPORTANTE: Debido al stream, para introducir la respuesta del modelo se necesita de un contenedor y el contenido
+        // Ya que no se conoce el tamaño del mensaje y claramente esto afecta al contenedor.
+
+        // El contenedor del chatBox que contendra el texto del modelo
         const botMsg = document.createElement("div");
         botMsg.className = "message bot";
+        // El texto del mensaje del modelo
         const content = document.createElement("div");
+        // Se introduce el content dentro del botMsg
         botMsg.appendChild(content);
+        // El botMsg se añade al chatBox (Bubuja de texto)
         chatBox.appendChild(botMsg);
+        // Si el contenido supera el tamaño del chatBox, se empuja hacia y se incrementa el tamaño
         chatBox.scrollTop = chatBox.scrollHeight;
 
         try {
-          console.log("🟠 Haciendo fetch a /chat...");
+          // Peticion al endpoint /chat (Modelo LLM)
           const res = await fetch("/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message })
           });
 
-          console.log("🟢 Conexión establecida con /chat, empezando stream");
+          // Se declara el reader que lee el JSON de la respuesta del servidor
           const reader = res.body.getReader();
+          // Se declara el decoder para decodificar el stream
           const decoder = new TextDecoder();
-
+          // Se declara la variable que contiene toda la respuesta (Esta funcion ya introduce el texto en el chat)
           const chunkTotal = await readStream(reader, decoder, content, chatBox);
 
+          // Al terminar la funcion readStream, se envia una peticion al endpoint /save_context
+          // para guardar el contexto de la conversacion en la BBDD
           if (chunkTotal.trim() !== "") {
-            console.log("🟢 Texto recibido, enviando a /save_context...");
             await fetch("/save_context", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ mensaje_usuario: message,
                                     respuesta_lervis: chunkTotal })
             });
-            console.log("✅ Guardado exitoso en /save_context");
+            //console.log("Contexto guardado en la BBDD");
           } else {
-            console.warn("⚠️ No hay texto acumulado para enviar a /save_context");
+            console.warn("Contexto vacio");
           }
-
+          // Formateo en Markdown del mensaje del modelo al terminar el stream (No se ha podido conseguir en tiempo real)
+          // TRABAJAR EN EL FORMATEO SI DA TIEMPO
           const formatted = chunkTotal
-            .replace(/\r?\n\r?\n/g, '\n\n')
+            .replace(/\r?\n\r?\n/g, '\n\n') 
             .replace(/([^\n])\n(?=[^\n])/g, '$1  \n');
+          // Se aplica el parser de markdown para formatear el texto (El modelo devuelve el texto en markdown)
           const markdownFormatted = marked.parse(formatted);
+          // Se sobreescribe el contenido escrito anterioremente mediante stream.
           content.innerHTML = markdownFormatted;
 
-          console.log("✅ Respuesta formateada y renderizada");
-
         } catch (error) {
-          console.error("❌ Error en sendMessage:", error);
+          // CAMBIAR POR UN MENSAJE DE CHAT MAS AMABLE Y NATURAL
+          console.error("Error en sendMessage:", error);
           content.innerText = error;
         }
       }
-
+      // Se añade el evento de escucha al input de texto para enviar el mensaje al pulsar Enter y no SHIFT+Enter para poder hacer saltos de linea en el input text
       input.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
+          // Se previene de que shift+enter envie el mensaje
           e.preventDefault();
+          // llama a la funcion sendMessage
           sendMessage();
         }
       });
 
+      // Evento que escucha sobre el boton de enviar, para que al hacer click llame a sendMessage
       sendButton.addEventListener("click", sendMessage);
     };
   </script>
