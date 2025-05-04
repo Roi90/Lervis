@@ -1,4 +1,4 @@
-/* 🔄 Reset básico para evitar diferencias entre navegadores */
+/* Reset básico para evitar diferencias entre navegadores */
 * {
   box-sizing: border-box;  /* El tamaño total incluye padding y borde */
   margin: 0;                /* Elimina márgenes por defecto */

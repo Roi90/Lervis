@@ -11,10 +11,10 @@ import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sqlalchemy import create_engine
 
+from Functions.PDF_descarga import PDF_descarga_temp
 from Functions.Loggers import crear_logger
 from Functions.API_metadata import extraccion_por_categorias
 from Functions.Docling_OCR import Archivo_to_OCR, Carga_Docling_OCR
-from Functions.PDF_descarga import PDF_descarga_temp
 from Functions.Florence_2_anotacion import  Carga_FLorence2_modelo
 from Functions.Enriquecimiento_documento import enriquecimiento_doc
 from Functions.Embeddings import carga_BAAI, embedding

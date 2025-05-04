@@ -6,13 +6,13 @@ Autor: Roi Pereira Fiuza
 Fecha: 11/03/2024
 """
 
-from Functions.Loggers import create_logger
+from Functions.Loggers import crear_logger
 from transformers import AutoProcessor, AutoModelForCausalLM  
 from PIL import Image
 import torch
 import time
 
-logger = create_logger('Florence2', 'florence2.log')
+logger = crear_logger('Florence2', 'florence2.log')
 
 def Carga_FLorence2_modelo():
     """
