@@ -37,7 +37,6 @@ def Carga_FLorence2_modelo():
 
 
 
-
 def Florence2_detailed_annotation(model, processor, image: Image, task_prompt='<MORE_DETAILED_CAPTION>', text_input=None):
     """
     Genera una anotación detallada para una imagen dada utilizando el modelo y procesador especificados.
@@ -55,8 +54,13 @@ def Florence2_detailed_annotation(model, processor, image: Image, task_prompt='<
         prompt = task_prompt
     else:
         prompt = task_prompt + text_input
+
     timestamp = time.time()
+
+    #logger.debug("Preparando inputs para Florence2...")
     inputs = processor(text=prompt, images=image, return_tensors="pt").to('cuda', torch.float16)
+
+    #logger.debug("Generando IDs...")
     generated_ids = model.generate(
       input_ids=inputs["input_ids"].cuda(),
       pixel_values=inputs["pixel_values"].cuda(),
@@ -65,14 +69,19 @@ def Florence2_detailed_annotation(model, processor, image: Image, task_prompt='<
       do_sample=False,
       num_beams=3,
     )
+   # logger.debug("Decodificando salida...")
     generated_text = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+
+    #logger.debug(f"Texto generado por Florence2: {generated_text}...")
+
     parsed_answer = processor.post_process_generation(
         generated_text, 
         task=task_prompt, 
         image_size=(image.width, image.height)
     )
+    #print('-----PARSED ANSWER----\n',parsed_answer)
     timestamp_elapsed = time.time()
     duracion = timestamp_elapsed - timestamp
-    logger.debug(f"Duracion segundos - {duracion:.2f}, Caracteres generados - {len(parsed_answer)} , Alto Imagen - {image.height}, Ancho Imagen - {image.width}")
+    logger.debug(f"Duracion segundos - {duracion:.2f}, Caracteres generados - {len(parsed_answer.get('<MORE_DETAILED_CAPTION>', ''))} , Alto Imagen - {image.height}, Ancho Imagen - {image.width}")
 
     return parsed_answer

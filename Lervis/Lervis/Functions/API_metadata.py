@@ -18,7 +18,7 @@ from tqdm import tqdm
 logger = crear_logger('Extraccion_arxiv', 'extraccion_arxiv.log')
 
 
-def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='submittedDate', orden_descendente=True):
+def extraer_publicaciones_arxiv(categoria, max_resultados=1, ordenar_por='submittedDate', orden_descendente=True):
     """
     Extrae publicaciones de arXiv.org usando su API.
     
@@ -110,7 +110,7 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1000, ordenar_por='sub
         logger.error(f"Error inesperado durante la extracción: {e}", exc_info=True)
         return pd.DataFrame()
     
-def extraccion_por_categorias(conn, max_resultados=1000):
+def extraccion_por_categorias(conn, categorias_id_dict ,max_resultados=1):
     """
     Ejecuta la función extraer_publicaciones_arxiv iterando por todas las categorías definidas en categorias_arxiv.
         
@@ -124,10 +124,10 @@ def extraccion_por_categorias(conn, max_resultados=1000):
     DataFrame de pandas con los metadatos de las publicaciones descargadas de todas las categorías.
     """
     df_lst = []
-    for i in tqdm(categorias_arxiv.keys()):
-        print(f' Extrayendo la categoria: {categorias_arxiv[i]}...')
+    for i in tqdm(categorias_id_dict.keys()):
+        #print(f' Extrayendo la categoria: {categorias_arxiv[i]}...')
         # Descargar metadatos de la categoria
-        logger.debug(f"Descargando metadatos de la categoria {categorias_arxiv[i].upper()}...")
+        logger.debug(f"Descargando metadatos de la categoria {categorias_id_dict[i]}...")
         # DF con los metadatos de la categoria
         metadatos_categoria = extraer_publicaciones_arxiv(i, max_resultados)
         df_lst.append(metadatos_categoria)
@@ -177,5 +177,4 @@ def filtrar_ayer(df: pd.DataFrame):
     fecha_ayer = ayer.strftime('%Y-%m-%d')
 
     df_filtrado = df[df['fecha_publicacion'] == fecha_ayer]
-
     return df_filtrado

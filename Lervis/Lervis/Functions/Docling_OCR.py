@@ -12,6 +12,7 @@ from Functions.Loggers import crear_logger
 from datasets import Dataset
 from tqdm import tqdm
 from PIL import Image
+import torch
 
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
@@ -53,7 +54,7 @@ def Carga_Docling_OCR():
     """
     try:
         pipeline_options = PdfPipelineOptions()
-        pipeline_options.images_scale = 1.0  # Escala de la imagen (resolución)
+        pipeline_options.images_scale = 1  # Escala de la imagen (resolución)
         pipeline_options.generate_page_images = True  # Generar imágenes de las páginas
         doc_converter = DocumentConverter(
             format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
@@ -130,11 +131,19 @@ def Archivo_to_OCR(input_doc_path: str, doc_converter: DocumentConverter) -> Dat
 
         end_time = time.time()
         duracion = end_time - start_time
+        # Reconstruccion de las imagenes dentro del tipo dataset.
+        try:
+            dataset = dataset.map(transform_bytes_to_image)
+        except Exception as e:
+            logger.error(f'Error al recontruir las imagenes en el dataset: {e}')
+
         logger.info(f"Documento descargado y segmentado en {duracion:.2f} segundos.")
         logger.debug(f"Duracion OCR segundos - {duracion:.2f}, Paginas - {len(dataset)}")
         
-        # Reconstruccion de las imagenes dentro del tipo dataset.
-        dataset = dataset.map(transform_bytes_to_image)
+    
+        # Se debe limpiar la cache para que no de error por las limitaciones de la GPU
+        #torch.cuda.empty_cache()
+        #print('Cache limpiada de la GPU')
         return dataset
     except Exception as e:
         logger.error(f"Error al procesar el documento con OCR: {e} - Doc Path: {input_doc_path}")

@@ -79,6 +79,19 @@ def carga_dimension_categorias(conn):
         raise
     return categoria_dict
 
+def dict_catetorias(conn):
+    categoria_dict = {}
+    try:
+        # Extracción de datos para generar el diccionario
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, codigo_categoria FROM categoria;")
+            for row in cur.fetchall():
+                categoria_dict[row['codigo_categoria']] = row['id'] 
+    except Exception as e:
+        logger.error(f"Error al recuperar datos de la tabla 'categoria': {e}")
+        raise
+    return categoria_dict
+
 def carga_hechos_publicaciones(conn, df: pd.DataFrame):
     """
     Carga los hechos de publicaciones en la base de datos.
@@ -158,16 +171,15 @@ def carga_hechos_resumen_embeddings(df: pd.DataFrame, engine):
     except  Exception as e:
         logger.error(f"Error al insertar datos en la tabla 'embeddings_resumen': {e} - id {df['id_publicaciones']}")
 
-def carga_doc_enriquecido(documento_enriquecido, id,  conn):
+def carga_doc_enriquecido(documento_enriquecido, identificador_arxiv,  conn):
     try:
-        id = int(id)
         with conn.cursor() as cur:
             cur.execute("""UPDATE publicaciones
                         SET documento_completo = %s
-                        WHERE id = %s;""", (documento_enriquecido, id))
+                        WHERE identificador_arxiv = %s;""", (documento_enriquecido, identificador_arxiv))
             conn.commit()
     except Exception as e:
-        logger.error(f"Error al insertar datos en la tabla 'publicaciones': {e} - id {id}")
+        logger.error(f"Error al insertar datos en la tabla 'publicaciones': {e} - id {identificador_arxiv}")
         
 
 def normalizador_id_categoria_BBDD(df: pd.DataFrame, diccionario: dict):
