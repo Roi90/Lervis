@@ -246,7 +246,7 @@ def normalizador_id_embeddings_BBDD(df: pd.DataFrame, diccionario: dict):
 
 # ---------------------------- Recuperacion documentos y formateo para contexto
 
-def similitud_coseno(embedding_denso: np.array, conn, umbral_similitud, n_docs)-> dict:
+def similitud_coseno(embedding_denso: np.array, conn, umbral_distancia, n_docs)-> dict:
     """
     Calcula la similitud del coseno entre un vector y los vectores almacenados en la base de datos.
     Esta función toma un vector y calcula la similitud del coseno con los vectores de contenido y resumen
@@ -260,7 +260,7 @@ def similitud_coseno(embedding_denso: np.array, conn, umbral_similitud, n_docs)-
         list: Lista de documentos recuperados con sus similitudes.
     """
 
-    embedding_list = embedding_denso.tolist()
+    embedding = embedding_denso.tolist()
     try:
         with conn.cursor() as cur:
             logger.debug("Consultando BBDD (SIMILITUD COSENO)")
@@ -271,7 +271,7 @@ def similitud_coseno(embedding_denso: np.array, conn, umbral_similitud, n_docs)-
                         WHERE (chunk_emb_dense <=> %s::vector) <= %s
                         ORDER BY chunk_emb_dense <=> %s::vector ASC
                         LIMIT %s;
-                        """, (embedding_list, embedding_list, umbral_similitud, embedding_list, n_docs))
+                        """, (embedding, embedding, umbral_distancia, embedding, n_docs))
             # Recuperar los resultados
             documentos_recuperados = cur.fetchall()
             return documentos_recuperados

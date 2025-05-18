@@ -260,7 +260,7 @@ def Llama3_1_API(prompt):
         yield "Lo siento, hubo un error al procesar tu solicitud."
 
 
-def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embedding_model, traductor_model, traductor_tokenizer) -> tuple[str, str]:
+def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embedding_model, traductor_model, traductor_tokenizer):
 
     if deteccion_intencion(user_input) == 'consultar':
         temporalidad = deteccion_temporalidad(user_input)
@@ -295,16 +295,15 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
                 user_input = translate_text(traductor_model, traductor_tokenizer, user_input)
                 # Dado que se consulta, se genera el embedding
                 embedding_denso, embedding_disperso = embedding(user_input, model=embedding_model)
-                # Recuperacion de documentos mediante similitud del coseno
-                docs_recuperado = similitud_coseno(embedding_denso, conn, 0.3, 5)
+                # Recuperacion de documentos mediante similitud del coseno (Distancia para simplificarlo)
+                docs_recuperado = similitud_coseno(embedding_denso, conn, 0.5, 5)
+
                 df_temp = reranking(docs_recuperado, embedding_disperso)
                 # El numero de documentos generados en el contexto es en funcion de num_docs
                 doc_formateado = formato_contexto_doc_recuperados(urls_usados, conn, df_temp, num_docs=2)
-                # Se apendiza el valor de la consulta al contexto
-                #context += f'\n{ahora} Usuario: {user_input}'
                 # Validacion de que no esta vacio
                 if doc_formateado:
-                    context += f"\n\nRealiza una breve explicacion sobre los documentos:\n\n{doc_formateado}"
+                    context += f"\n\nFacilita esta informacion con la estructura facilitada:\n\n{doc_formateado}"
                     
                 full_prompt = f"""  
                 Eres un experto en publicaciones academicas de Arxiv.\n

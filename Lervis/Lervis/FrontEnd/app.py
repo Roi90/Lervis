@@ -75,7 +75,7 @@ def chat():
     #context += f"\n\n{ahora} - Usuario: {user_input}"
     context = limitador_contexto(context)
 
-    print("\n🟡 CONTEXTO ANTES DEL RAG_chat_V2:")
+    print("\n CONTEXTO ANTES DEL RAG_chat_V2:")
     print(context)
 
     try:
@@ -115,7 +115,8 @@ def save_context():
     data = request.json
     input_usuario = data['mensaje_usuario']
     respuesta_lervis = data['respuesta_lervis']
-    #print(f"🔵 Respuesta recibida en /save_context: {respuesta_lervis}")
+    
+    #print(f" Respuesta recibida en /save_context: {respuesta_lervis}")
 
     ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
     # Si no hay contexto se crea uno nuevo junto con la informacion inicial
@@ -130,6 +131,5 @@ def save_context():
 
 
 if __name__ == '__main__':
-    print("🟢 Iniciando la app Flask...🟢")
     logger.debug(f"Iniciando la app Flask ")
     app.run(debug=False, threaded=True)
