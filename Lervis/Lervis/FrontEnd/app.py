@@ -70,6 +70,7 @@ def chat():
     data = request.json
     user_input = data['message']
 
+    # Obtiene el contexto de la BBDD o mensaje inicial
     context = session.get('context', f'{info_inicial}\n \n{ahora} - Usuario: {user_input}')
 
     #context += f"\n\n{ahora} - Usuario: {user_input}"
@@ -80,7 +81,7 @@ def chat():
 
     try:
         # Manejo del contexto dentro de la función dependiendo de las funciones invocadas
-        full_prompt = RAG_chat_V2(
+        system_prompt, context_prompt, user_prompt  = RAG_chat_V2(
             urls_usados=urls_usados,
             user_input=user_input,
             context=context,
@@ -97,7 +98,7 @@ def chat():
         return Response("Perdon, se me cruzaron los cables, ¿Podrías repetirlo?")
         
     def generate():
-        for token in Llama3_1_API(full_prompt):
+        for token in Llama3_1_API(system_prompt, context_prompt, user_prompt):
             yield token 
 
     return Response(
