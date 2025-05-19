@@ -29,7 +29,7 @@ def crear_logger(nombre: str, archivo_log: str) -> logging.Logger:
         logger.setLevel(logging.DEBUG)
 
         # Formato del log
-        formateador = logging.Formatter('%(asctime)s, %(name)s, %(levelname)s, %(message)s')
+        formateador = logging.Formatter('%(asctime)s|%(name)s|%(levelname)s|%(message)s')
 
         # Handler consola
         consola_handler = logging.StreamHandler()
@@ -49,7 +49,7 @@ def crear_logger(nombre: str, archivo_log: str) -> logging.Logger:
             if not os.path.exists(log_file_path):
                 # Cuando el archivo no existe, lo creamos y añadimos los headers
                 with open(log_file_path, 'w') as f:
-                    f.write('timestamp,name,level,message\n')
+                    f.write('timestamp|name|level|message\n')
             archivo_handler = logging.FileHandler(log_file_path)
             archivo_handler.setLevel(logging.DEBUG)
             archivo_handler.setFormatter(formateador)
