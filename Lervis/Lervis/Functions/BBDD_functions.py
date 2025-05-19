@@ -246,7 +246,7 @@ def normalizador_id_embeddings_BBDD(df: pd.DataFrame, diccionario: dict):
 
 # ---------------------------- Recuperacion documentos y formateo para contexto
 
-def similitud_coseno(embedding_denso: np.array, conn, umbral_distancia, n_docs)-> dict:
+def similitud_coseno_chunks(embedding_denso: np.array, conn, umbral_distancia, n_docs)-> dict:
     """
     Calcula la similitud del coseno entre un vector y los vectores almacenados en la base de datos.
     Esta función toma un vector y calcula la similitud del coseno con los vectores de contenido y resumen
@@ -263,7 +263,7 @@ def similitud_coseno(embedding_denso: np.array, conn, umbral_distancia, n_docs)-
     embedding = embedding_denso.tolist()
     try:
         with conn.cursor() as cur:
-            logger.debug("Consultando BBDD (SIMILITUD COSENO)")
+            
             cur.execute("""
                         SELECT id, id_publicaciones, chunk_emb_sparse, chunk,
                             chunk_emb_dense <=> %s::vector AS similitud_contenido
@@ -274,17 +274,49 @@ def similitud_coseno(embedding_denso: np.array, conn, umbral_distancia, n_docs)-
                         """, (embedding, embedding, umbral_distancia, embedding, n_docs))
             # Recuperar los resultados
             documentos_recuperados = cur.fetchall()
+            logger.debug(f"Consultando BBDD chunks (SIMILITUD COSENO) - {umbral_distancia}, Docs recuperados - {len(documentos_recuperados)}")
             return documentos_recuperados
     except Exception as e:
         logger.error(f"Error al consultar la base de datos: {e}")
-        return "No se si te he entendido bien, pero ¿Podrías detallar un poco mas tu pregunta?"
+        return []
         
 
-        #if not documentos_recuperados:
-        #    return "No se si te he entendido bien, pero ¿Podrías detallar un poco mas tu pregunta?"
+def similitud_coseno_resumen(embedding_denso: np.array, conn, umbral_distancia, n_docs)-> dict:
+    """
+    Calcula la similitud del coseno entre un vector y los embeddings de resúmenes almacenados en la base de datos.
 
-        # Devolver el resumen del documento más relevante
-        #return documentos_recuperados
+    Esta función consulta la tabla `embeddings_resumen` y recupera los documentos cuyo embedding de resumen
+    sea más similar (menor distancia del coseno) al embedding proporcionado.
+
+    Args:
+        embedding_denso (np.array): Vector de embedding a comparar.
+        conn (psycopg.Connection): Conexión a la base de datos.
+        umbral_distancia (float): Valor máximo de distancia del coseno permitida.
+        n_docs (int): Número máximo de documentos a recuperar.
+
+    Returns:
+        list: Lista de tuplas con los documentos recuperados y su distancia.
+    """
+
+    embedding = embedding_denso.tolist()
+    try:
+        with conn.cursor() as cur:
+            
+            cur.execute("""
+                        SELECT id, id_publicaciones, resumen_emb_sparse, resumen,
+                            resumen_emb_dense <=> %s::vector AS similitud_contenido
+                        FROM embeddings_resumen
+                        WHERE (resumen_emb_dense <=> %s::vector) <= %s
+                        ORDER BY resumen_emb_dense <=> %s::vector ASC
+                        LIMIT %s;
+                        """, (embedding, embedding, umbral_distancia, embedding, n_docs))
+            # Recuperar los resultados
+            documentos_recuperados = cur.fetchall()
+            logger.debug(f"Consultando BBDD resumenes (SIMILITUD COSENO) - {umbral_distancia}, Docs recuperados - {len(documentos_recuperados)}")
+            return documentos_recuperados
+    except Exception as e:
+        logger.error(f"Error al consultar la base de datos: {e}")
+        return []
     
 def hstore_a_dict(hstore_str: str) -> dict:
     """
@@ -336,11 +368,12 @@ def formatear_metadata(doc):
     return (
         "\n**----------------------------**\n"
         f"**Titulo**: {doc['titulo']}\n"
+        f"**Arxiv ID**: {doc['identificador_arxiv']}\n"
         f"**Categoria**: {doc['categoria']}\n"
         f"**Autores**:\n" + "\n".join(f"- {a}" for a in doc['autores'].split(",")) + "\n"
         f"**Fecha de publicacion**: {doc['fecha_publicacion']}\n"
         f"**URL de la publicacion**: {doc['url_pdf']}\n"
-        f"Resumen: {doc['resumen']}\n"
+        f"**Resumen**: {doc['resumen']}\n"
         "**----------------------------**\n"
     )
 
@@ -364,8 +397,6 @@ def formato_contexto_doc_recuperados(urls_usados, conn, df: pd.DataFrame, num_do
             df_top_docs = df.head(num_docs)
             # Extraer los IDs de los documentos
             id_publicaciones = list(set(df_top_docs['id_publicaciones']))
-            # Extraer los ID de los Chunks
-            id_chunks = list(set(df_top_docs['id']))
             # Formateo para correcta ejecucion de cur.execute
             params = tuple(id_publicaciones)
             # Formateo para poder introducir una tupla (%s, %s, %s...)
@@ -378,6 +409,7 @@ def formato_contexto_doc_recuperados(urls_usados, conn, df: pd.DataFrame, num_do
                             autores,
                             fecha_publicacion,
                             url_pdf,
+                            identificador_arxiv,
                             ER.resumen
                             FROM publicaciones
                             LEFT JOIN categoria as CAT
@@ -530,4 +562,33 @@ def temporalidad_a_SQL(conn, temporalidad: tuple):
 
 
     return None
+
+def recuperar_documento_por_arxiv_id(arxiv_id: str, conn):
+    """
+    Recupera el texto completo de un documento dado un identificador de arXiv.
+
+    Args:
+        arxiv_id (str): Identificador de arXiv.
+        conn: Conexión activa a la base de datos.
+
+    Returns:
+        str | None: Documento si se encuentra, o None.
+    """
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT titulo, documento_completo
+                FROM publicaciones
+                WHERE identificador_arxiv = %s
+                AND documento_completo IS NOT NULL;
+            """, (arxiv_id,))
+            row = cur.fetchone()
+            if row:
+                return row['titulo'] ,row['documento_completo']
+            else:
+                f'No existe ese id {arxiv_id} en la base de datos'
+    except Exception as e:
+        logger.error(f"Error al recuperar documento por arXiv: {e}")
+        return None
+    
 

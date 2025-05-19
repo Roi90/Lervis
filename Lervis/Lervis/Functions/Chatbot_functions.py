@@ -13,7 +13,7 @@ from ollama import chat
 from Functions.Embeddings import embedding, carga_BAAI
 from Functions.BBDD_functions import conn_bbdd
 from Functions.Loggers import crear_logger
-from Functions.BBDD_functions import similitud_coseno, reranking, formato_contexto_doc_recuperados,temporalidad_a_SQL, conn_bbdd
+from Functions.BBDD_functions import similitud_coseno_chunks, similitud_coseno_resumen, reranking, formato_contexto_doc_recuperados,temporalidad_a_SQL, conn_bbdd , recuperar_documento_por_arxiv_id
 from Functions.MarianMT_traductor import carga_modelo_traductor, translate_text
 
 logger = crear_logger('Funciones_Chatbot', 'Funciones_Chatbot.log')
@@ -185,21 +185,23 @@ def deteccion_intencion(user_input: str) -> str:
     system_prompt = (
     "Eres un clasificador cuya única función es decidir entre dos intenciones:\n\n"
     "- consultar → El usuario quiere consultar, buscar, recuperar o encontrar información en la base de datos. "
-    "Usa 'consultar' si detectas verbos como consultar, buscar, encontrar, obtener, recuperar, listar, acceder, "
-    "investigar, explorar o similares.\n"
-    "- hablar → El usuario sólo quiere una respuesta conversacional sin necesidad de acceder a la base de datos.\n\n"
+    "Usa 'consultar' si detectas verbos como consultar, buscar, encontrar, obtener, recuperar, listar, investigar, explorar o similares.\n"
+    "- hablar → Siempre que no encuentres los verbos de consultar sera hablar.\n\n"
     "Debes RESPONDER **SIEMPRE** estrictamente con un JSON como uno de estos:\n"
     "{ \"intencion\": \"consultar\" }\n"
     "o\n"
     "{ \"intencion\": \"hablar\" }\n\n"
     "¡SIN NADA MÁS Y SIN ACENTOS NI COMENTARIOS! Únicamente responde con la clave \"intencion\"."
 )
-    full_prompt = f"{system_prompt}\n\nUsuario: {user_input}\nClasificación:"
+    #full_prompt = f"{system_prompt}\n\nUsuario: {user_input}\nClasificación:"
 
     try:
         response = chat(
             model="llama3.1",
-            messages=[{"role": "user", "content": full_prompt}],
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input}
+                ],
             stream=False 
         )
 
@@ -229,13 +231,23 @@ def deteccion_intencion(user_input: str) -> str:
         return "hablar"
 
 
-def Llama3_1_API(prompt):
+def Llama3_1_API(system_prompt, context_prompt, user_prompt):
     try:
         # Utiliza la API local.
         stream = chat(
             model="llama3.1",
-            messages=[{"role": "user", "content": prompt}],
-            stream=True
+            
+            messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "assistant", "content": context_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+            stream=True,
+            options={'temperature': 0.3, # Se busca profesionalidad y certeza
+                     "num_ctx": 5000, # Ventana de tokens que puede manejar el modelo como entrada
+                     "num_predict": 800} # Número máximo de tokens que generará el modelo como salida
+            
+
         )
 
         for part in stream:
@@ -260,7 +272,44 @@ def Llama3_1_API(prompt):
         yield "Lo siento, hubo un error al procesar tu solicitud."
 
 
+def detectar_identificador_arxiv(user_input: str):
+    """
+    Detecta si hay un identificador de arXiv válido en el texto del usuario.
+
+    Args:
+        user_input (str): Texto introducido por el usuario.
+
+    Returns:
+        str | None: El identificador de arXiv si se encuentra, o None.
+    """
+    patron_arxiv = r"(?:arxiv:)?(\d{4}\.\d{4,5}(?:v\d+)?|[a-z\-]+(?:\.[A-Z]{2})?/\d{7}(?:v\d+)?)"
+
+    match = re.search(patron_arxiv, user_input, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    return None
+
 def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embedding_model, traductor_model, traductor_tokenizer):
+
+    context_prompt = context
+    user_prompt = user_input
+
+    arxiv_detectado = detectar_identificador_arxiv(user_input)
+    if arxiv_detectado:
+        logger.debug(f"Arxiv id detectado: {arxiv_detectado}, User input {user_input}")
+        try:
+           titulo_documento, documento_completo = recuperar_documento_por_arxiv_id(arxiv_detectado,conn)
+        except Exception as e:
+            logger.error(f'Error al recuperar el documento mediante identificador de arxiv: {e}')
+
+        system_prompt = f"""
+            Genera un resumen de cada apartado a partir del documento proporcionado, resaltando puntos claves y las conclusiones. Con formato Markdown.
+            **CONTESTA UNICAMENTE ESPAÑOL**  
+            """
+        
+        context_prompt += f"\n\n Titulo del documento: {titulo_documento}\n\nDocumento proporcionado:\n\n{documento_completo[:4000]}" # Esto se limita dada la limitacion computacional.
+        
+        return system_prompt, context_prompt, user_prompt
 
     if deteccion_intencion(user_input) == 'consultar':
         temporalidad = deteccion_temporalidad(user_input)
@@ -273,60 +322,86 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
                 consulta = temporalidad_a_SQL(conn,temporalidad)
                 # Apendizo al contexto
                 #context += f'\n{ahora} Usuario: {user_input}'
-                context += f"\nLervis: Conteo de publicaciones en la base de datos para {temporalidad[1]}: {consulta}"
-                full_prompt = f"""
-                Eres un experto en publicaciones academicas de Arxiv.\n
-                Se conciso y claro en tus respuestas.\n
-                Tono profesional y amable.\n
-                Usa el contexto lo maximo posible para responder.\n
-                **CONTESTA UNICAMENTE ESPAÑOL**\n\n   
-                             
-                {context}
+                context_prompt += f"\nLervis: Conteo de publicaciones en la base de datos para {temporalidad[1]}: {consulta}"
+                system_prompt = f"""
+                Eres un experto en publicaciones academicas de Arxiv en la categoria CS, Ciencias de la computacion.
+                Se conciso y claro en tus respuestas.
+                Tono profesional y amable.
+                Usa el contexto lo maximo posible para responder.
+                **CONTESTA UNICAMENTE ESPAÑOL**  
                 """
-                return full_prompt.strip()
+                #{context}
+                return system_prompt, context_prompt, user_prompt
             
             except Exception as e:
                 logger.error(f"En la lectura de temporalidad: {e} - temporalidad: {temporalidad}")
-                return "Disculpame, me estaba haciendo unos huevos fritos, ¿Podrías repetir la pregunta?", context
+                system_prompt = "Responde brevemente y en español."
+                return system_prompt, "Error al recuperar contexto.", "Disculpa, ¿podrías repetir la pregunta?"
         
         # No Se detecta temporalidad en el input del usuario.
         else:
-            try:# Se traudce el input para mejores resultados.
-                user_input = translate_text(traductor_model, traductor_tokenizer, user_input)
+            try:# Se traduce el input para mejores resultados.
+                user_input_en = translate_text(traductor_model, traductor_tokenizer, user_input)
                 # Dado que se consulta, se genera el embedding
-                embedding_denso, embedding_disperso = embedding(user_input, model=embedding_model)
+                embedding_denso, embedding_disperso = embedding(user_input_en, model=embedding_model)
                 # Recuperacion de documentos mediante similitud del coseno (Distancia para simplificarlo)
-                docs_recuperado = similitud_coseno(embedding_denso, conn, 0.5, 5)
-
-                df_temp = reranking(docs_recuperado, embedding_disperso)
-                # El numero de documentos generados en el contexto es en funcion de num_docs
-                doc_formateado = formato_contexto_doc_recuperados(urls_usados, conn, df_temp, num_docs=2)
-                # Validacion de que no esta vacio
-                if doc_formateado:
-                    context += f"\n\nFacilita esta informacion con la estructura facilitada:\n\n{doc_formateado}"
+                docs_recuperados_chunk = similitud_coseno_chunks(embedding_denso, conn, 0.45, 5)
+                docs_recuperados_resumen = similitud_coseno_resumen(embedding_denso, conn, 0.5, 5)
+                if docs_recuperados_chunk:
+                    #print(docs_recuperado)
+                    df_temp = reranking(docs_recuperados_chunk, embedding_disperso)
+                    # El numero de documentos generados en el contexto es en funcion de num_docs
+                    doc_formateado = formato_contexto_doc_recuperados(urls_usados, conn, df_temp, num_docs=2)
+                    print(doc_formateado)
+                    # Validacion de que no esta vacio
+                    context_prompt += f"\n\nDOCUMENTOS RECUPERADOS:\n\n{doc_formateado}"
+                    system_prompt = f"""
+                    **CONTESTA UNICAMENTE EN ESPAÑOL** 
+                    **Responde únicamente utilizando el contexto bajo 'DOCUMENTOS RECUPERADOS'.**
+                    **Respeta el formato pero traducelo al español**
+                    NO inventes publicaciones. Si no hay información suficiente, indícalo.
                     
-                full_prompt = f"""  
-                Eres un experto en publicaciones academicas de Arxiv.\n
-                 Se conciso y claro en tus respuestas.\n
-                Tono profesional y amable.\n
-                Usa el contexto lo maximo posible para responder.\n
-                **CONTESTA UNICAMENTE ESPAÑOL**\n\n               
-                {context}
-                """
-                return full_prompt.strip()
+                    """
+                    #{context}
+                    return system_prompt, context_prompt, user_prompt
+                
+                elif docs_recuperados_resumen:
+
+                    df_temp = reranking(docs_recuperados_resumen, embedding_disperso)
+                    # El numero de documentos generados en el contexto es en funcion de num_docs
+                    doc_formateado = formato_contexto_doc_recuperados(urls_usados, conn, df_temp, num_docs=2)
+                    #print(doc_formateado)
+                    # Validacion de que no esta vacio
+                    context_prompt += f"\n\nDOCUMENTOS RECUPERADOS:\n\n{doc_formateado}"
+                    system_prompt = f"""
+                    **CONTESTA UNICAMENTE EN ESPAÑOL** 
+                    **Responde únicamente utilizando el contexto bajo 'DOCUMENTOS RECUPERADOS'.**
+                    **Respeta el formato pero traducelo al español**
+                    NO inventes publicaciones. Si no hay información suficiente, indícalo.
+                    """
+                    #{context}
+                    return system_prompt, context_prompt, user_prompt
+                else:
+                    system_prompt = """
+                    No se han encontrado resultados relevantes. Intenta ser más específico o proporciona un identificador arXiv si lo tienes.
+                    **CONTESTA UNICAMENTE ESPAÑOL**
+                    """
+                    return system_prompt, context_prompt, user_prompt
         
             except Exception as e:
                 logger.error(f"Error en la consulta de RAG_chat_V2: {e} - temporalidad: {temporalidad}")
-                return "Disculpame, me estaba sirviendo un cafe, ¿Podrías repetir la pregunta?", context
+                system_prompt = "Responde brevemente y en español."
+                return system_prompt, "Error al recuperar contexto.", "Disculpa, ¿podrías repetir la pregunta?"
+                
 
     else: # Chatear con el usuario
         
-        full_prompt = f"""  
-        Eres un experto en publicaciones academicas de Arxiv.\n
-        Se conciso y claro en tus respuestas.\n
-        Tono profesional y amable.\n
-        Usa el contexto lo maximo posible para responder.\n
-        **CONTESTA UNICAMENTE ESPAÑOL**\n\n                
-        {context}
+        system_prompt = f"""  
+        Eres un experto en publicaciones academicas de Arxiv en la categoria CS, Ciencias de la computacion.
+        Se conciso y claro en tus respuestas.
+        Tono profesional y amable.
+        Usa el contexto lo maximo posible para responder.
+        **CONTESTA UNICAMENTE ESPAÑOL**               
         """
-        return full_prompt.strip()#, context
+        return system_prompt, context_prompt, user_prompt
+
