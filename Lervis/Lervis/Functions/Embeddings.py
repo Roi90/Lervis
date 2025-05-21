@@ -127,7 +127,28 @@ def embedding_ETL_DOC_ENRI(text,id, model):
     except Exception as e:
         logger_Doc_Enri.error(f"Error al crear los embeddings: {e}")
 
+def embedding_evaluator(text, model):
+    """
+    Genera embeddings para el texto dado utilizando el modelo y el tokenizador especificados.
+    Args:
+        text (str): El texto de entrada a ser embebido.
+        model (transformers.PreTrainedModel): El modelo preentrenado para generar embeddings.
+        tokenizer (transformers.PreTrainedTokenizer): El tokenizador asociado con el modelo.
+    Returns:
+        numpy.ndarray: Los embeddings del texto de entrada.
+    """
 
+    try:
+
+        embeddings = model.encode(text, return_dense=True,return_sparse=True,return_colbert_vecs=False,batch_size=12,max_length=6000)
+        
+        embeddings_denso = embeddings['dense_vecs']
+        embedding_disperso = embeddings['lexical_weights']
+
+        
+        return embeddings_denso,embedding_disperso
+    except Exception as e:
+        logger.error(f"EVALUATOR Error al crear los embeddings: {e}")
 
 def carga_BAAI():
     """
@@ -147,4 +168,9 @@ def carga_BAAI():
         raise
 
 
+modelo = carga_BAAI()
 
+text ='Ejemplo: Similitud con sparse en forma de luz'
+
+denso, sparse = embedding_evaluator(text, modelo)
+print(sparse)
