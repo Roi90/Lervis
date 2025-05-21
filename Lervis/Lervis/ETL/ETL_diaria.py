@@ -30,7 +30,7 @@ os.environ["TORCH_CUDA_ARCH_LIST"] = "8.6"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  
 
 # -----------------
-target_por_categoria = 1
+target_por_categoria = 3
 # -----------------
 try:
     inicio = time.time()
