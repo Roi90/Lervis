@@ -38,50 +38,53 @@ def Carga_FLorence2_modelo():
 
 
 def Florence2_detailed_annotation(model, processor, image: Image, task_prompt='<MORE_DETAILED_CAPTION>', text_input=None):
-    """
-    Genera una anotación detallada para una imagen dada utilizando el modelo y procesador especificados.
-    Args:
-        model: El modelo preentrenado utilizado para generar anotaciones.
-        processor: El procesador utilizado para preparar entradas y decodificar salidas.
-        image (Image): La imagen a anotar.
-        task_prompt (str, opcional): El prompt para guiar la tarea de anotación. Por defecto es '<MORE_DETAILED_CAPTION>'.
-        text_input (str, opcional): Entrada de texto adicional que se añadirá al prompt de la tarea. Por defecto es None.
-    Returns:
-        str: La anotación detallada generada para la imagen.
-    """  
-    
-    if text_input is None:
-        prompt = task_prompt
-    else:
-        prompt = task_prompt + text_input
+    try:
+        """
+        Genera una anotación detallada para una imagen dada utilizando el modelo y procesador especificados.
+        Args:
+            model: El modelo preentrenado utilizado para generar anotaciones.
+            processor: El procesador utilizado para preparar entradas y decodificar salidas.
+            image (Image): La imagen a anotar.
+            task_prompt (str, opcional): El prompt para guiar la tarea de anotación. Por defecto es '<MORE_DETAILED_CAPTION>'.
+            text_input (str, opcional): Entrada de texto adicional que se añadirá al prompt de la tarea. Por defecto es None.
+        Returns:
+            str: La anotación detallada generada para la imagen.
+        """  
+        
+        if text_input is None:
+            prompt = task_prompt
+        else:
+            prompt = task_prompt + text_input
 
-    timestamp = time.time()
+        timestamp = time.time()
 
-    #logger.debug("Preparando inputs para Florence2...")
-    inputs = processor(text=prompt, images=image, return_tensors="pt").to('cuda', torch.float16)
+        #logger.debug("Preparando inputs para Florence2...")
+        inputs = processor(text=prompt, images=image, return_tensors="pt").to('cuda', torch.float16)
 
-    #logger.debug("Generando IDs...")
-    generated_ids = model.generate(
-      input_ids=inputs["input_ids"].cuda(),
-      pixel_values=inputs["pixel_values"].cuda(),
-      max_new_tokens=1024,
-      early_stopping=False,
-      do_sample=False,
-      num_beams=3,
-    )
-   # logger.debug("Decodificando salida...")
-    generated_text = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
+        #logger.debug("Generando IDs...")
+        generated_ids = model.generate(
+        input_ids=inputs["input_ids"].cuda(),
+        pixel_values=inputs["pixel_values"].cuda(),
+        max_new_tokens=1024,
+        early_stopping=False,
+        do_sample=False,
+        num_beams=3,
+        )
+    # logger.debug("Decodificando salida...")
+        generated_text = processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
 
-    #logger.debug(f"Texto generado por Florence2: {generated_text}...")
+        #logger.debug(f"Texto generado por Florence2: {generated_text}...")
 
-    parsed_answer = processor.post_process_generation(
-        generated_text, 
-        task=task_prompt, 
-        image_size=(image.width, image.height)
-    )
-    #print('-----PARSED ANSWER----\n',parsed_answer)
-    timestamp_elapsed = time.time()
-    duracion = timestamp_elapsed - timestamp
-    logger.debug(f"Duracion segundos - {duracion:.2f}, Caracteres generados - {len(parsed_answer.get('<MORE_DETAILED_CAPTION>', ''))} , Alto Imagen - {image.height}, Ancho Imagen - {image.width}")
+        parsed_answer = processor.post_process_generation(
+            generated_text, 
+            task=task_prompt, 
+            image_size=(image.width, image.height)
+        )
+        #print('-----PARSED ANSWER----\n',parsed_answer)
+        timestamp_elapsed = time.time()
+        duracion = timestamp_elapsed - timestamp
+        logger.debug(f"Duracion segundos - {duracion:.2f}, Caracteres generados - {len(parsed_answer.get('<MORE_DETAILED_CAPTION>', ''))} , Alto Imagen - {image.height}, Ancho Imagen - {image.width}")
 
-    return parsed_answer
+        return parsed_answer
+    except Exception as e:
+        logger.error(f'Error al generar la anotacion: {e}')
