@@ -244,7 +244,7 @@ def Llama3_1_API(system_prompt, context_prompt, user_prompt):
         ],
             stream=True,
             options={'temperature': 0.3, # Se busca profesionalidad y certeza
-                     "num_ctx": 5000, # Ventana de tokens que puede manejar el modelo como entrada
+                     "num_ctx":  2048, # Ventana de tokens que puede manejar el modelo como entrada
                      "num_predict": 800} # Número máximo de tokens que generará el modelo como salida
             
 
@@ -341,6 +341,7 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
         # No Se detecta temporalidad en el input del usuario.
         else:
             try:# Se traduce el input para mejores resultados.
+                  
                 user_input_en = translate_text(traductor_model, traductor_tokenizer, user_input)
                 # Dado que se consulta, se genera el embedding
                 embedding_denso, embedding_disperso = embedding(user_input_en, model=embedding_model)
@@ -362,7 +363,6 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
                     NO inventes publicaciones. Si no hay información suficiente, indícalo.
                     
                     """
-                    #{context}
                     return system_prompt, context_prompt, user_prompt
                 
                 elif docs_recuperados_resumen:
