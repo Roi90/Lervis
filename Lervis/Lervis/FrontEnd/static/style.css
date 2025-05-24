@@ -11,7 +11,8 @@ html, body {
   background-color: #000;    /* Fondo negro estilo terminal */
   color: #e0e0e0;            /* Texto claro para contraste */
   font-family: Arial;        /* Tipografía consola */
-  overflow: hidden;          /* Evita scroll externo */
+  /*overflow: hidden;          /* Evita scroll externo */
+  overflow-y: auto;
 }
 /* Estilo base para todos los mensajes */
 .message {
@@ -39,6 +40,7 @@ html, body {
   overflow-y: auto;                   /* Aparece scroll si el contenido crece */
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   gap: 10px;                           /* Espacio entre mensajes */
   min-height: 100px;                  /* 🔧 Evita colapso cuando está vacío */
 }
