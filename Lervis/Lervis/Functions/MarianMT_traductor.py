@@ -6,15 +6,21 @@ logger = crear_logger('Traductor', 'Traductor.log')
 
 def carga_modelo_traductor(src_lang="es"):
     """
-    Carga el modelo y el tokenizador para la traducción de un idioma a otro.
-    
-    Args:
-        src_lang (str): Idioma de origen.
-        tgt_lang (str): Idioma de destino.
-        
-    Returns:
-        model: Modelo de traducción cargado.
-        tokenizer: Tokenizador cargado.
+    Carga el modelo y el tokenizador MarianMT para traducir del idioma de origen al inglés.
+
+    Utiliza modelos de Helsinki-NLP para traducción automática. Por defecto, traduce del español al inglés,
+    pero se puede especificar otro idioma de origen compatible.
+
+    Parámetros:
+        src_lang (str): Código del idioma de origen, por defecto Español (es).
+
+    Retorna:
+        tuple:
+            - model (MarianMTModel): Modelo de traducción cargado.
+            - tokenizer (MarianTokenizer): Tokenizador correspondiente al modelo.
+
+    Raises:
+        Exception: Si ocurre un error durante la carga del modelo o el tokenizador.
     """
     try:
         model_name = f'Helsinki-NLP/opus-mt-{src_lang}-{"en"}'
@@ -27,6 +33,24 @@ def carga_modelo_traductor(src_lang="es"):
         raise
 
 def translate_text(model, tokenizer, text):
+    """
+    Traduce un texto desde el idioma de origen al inglés utilizando un modelo MarianMT.
+
+    Esta función tokeniza el texto, lo traduce utilizando el modelo proporcionado y decodifica el resultado.
+    También registra métricas como duración, longitud de texto y ratio de compresión.
+
+    Parámetros:
+        model (MarianMTModel): Modelo de traducción previamente cargado.
+        tokenizer (MarianTokenizer): Tokenizador correspondiente al modelo.
+        text (str): Texto en idioma de origen que se desea traducir.
+
+    Retorna:
+        str: Texto traducido al inglés. Si ocurre un error, se devuelve el texto original.
+
+    Raises:
+        Exception: Si ocurre un error durante la traducción, se captura y se registra, devolviendo el texto original.
+
+    """
     try:
         start_time = time.time()
                 
@@ -55,14 +79,3 @@ def translate_text(model, tokenizer, text):
     except Exception as e:
         logger.error(f"Error al traducir el texto: {e}")
         return text
-
-
-
-# -----TESTEO
-
-# Traducir ejemplo
-#texto_original = "Razonamiento antes de la acción e imaginar posibles resultados (es decir, modelos del mundo) son esenciales para los agentes incorporados que operan en entornos abiertos y complejos. Sin embargo, trabajos previos incorporan solo una de estas habilidades en un agente de extremo a extremo o integran múltiples modelos especializados en un sistema de agente, lo que limita la eficiencia de aprendizaje y la generalización de la política."
-#idioma_detectado = detect(texto_original)
-#model, tokenizer = carga_modelo_traductor(idioma_detectado)
-#texto_traducido = translate_text(model, tokenizer, texto_original)
-#print(f'Texto traducido: {texto_traducido}')
