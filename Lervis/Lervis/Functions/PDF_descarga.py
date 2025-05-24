@@ -10,58 +10,22 @@ import tempfile
 
 logger = crear_logger('Descarga_PDF', 'Descarga_PDF.log')
 
-def PDF_descarga(URL: str, nombre_archivo:str) -> None:
-    """
-    Descarga un archivo PDF desde una URL y lo guarda en el sistema de archivos.
-
-    Parámetros:
-    -----------
-    URL : str
-        La URL desde donde se descargará el archivo PDF.
-    nombre_archivo : str
-        El nombre con el que se guardará el archivo PDF.
-
-    Retorna:
-    --------
-    str :
-        Path para el archivo descargado
-    """
-    ruta_target = f"Temp_files/{nombre_archivo}.pdf"
-
-
-    try:
-        # Hacer una solicitud GET a la URL
-        response = requests.get(URL)
-        # Verificar si hubo errores en la petición
-        response.raise_for_status()
-        # Verificar que la solicitud fue exitosa
-        logger.debug(f"Respuesta recibida. Código de estado: {response.status_code}")
-        # Guardar el contenido de la respuesta (el archivo PDF)
-        with open(ruta_target, 'wb') as file:
-            file.write(response.content)
-        logger.debug(f"Archivo PDF descargado con éxito: {nombre_archivo}")
-        return ruta_target, nombre_archivo
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error al realizar la petición HTTP: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"Error inesperado durante la extracción: {e}", exc_info=True)
-        return None
-    
-
-def PDF_descarga_temp(URL: str) -> str:
+def PDF_descarga_temp(URL: str):
     """
     Descarga un archivo PDF desde una URL y lo guarda en un archivo temporal.
 
+    Esta función realiza una solicitud HTTP a la URL proporcionada, descarga el contenido del PDF
+    y lo guarda en un archivo temporal que no se elimina automáticamente al cerrarse.
+
     Parámetros:
-    -----------
-    URL : str
-        La URL desde donde se descargará el archivo PDF.
+        URL (str): URL del archivo PDF que se desea descargar.
 
     Retorna:
-    --------
-    str :
-        Path del archivo PDF temporal.
+        str | None: Ruta del archivo temporal creado, o None si ocurre un error.
+
+    Raises:
+        RequestException: Si la solicitud HTTP falla.
+        Exception: Si ocurre un error al guardar el archivo temporal.
     """
     
     try:

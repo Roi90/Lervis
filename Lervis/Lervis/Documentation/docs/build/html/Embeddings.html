@@ -1,0 +1,258 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="es" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Functions.Embeddings module &mdash; documentación de Lervis - 1.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=4936afed"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=f85f4cfb"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Índice" href="genindex.html" />
+    <link rel="search" title="Búsqueda" href="search.html" />
+    <link rel="next" title="Functions.Enriquecimiento_documento module" href="Enriquecimiento_documento.html" />
+    <link rel="prev" title="Functions.Docling_OCR module" href="Docling_OCR.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Lervis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Buscar documentos" aria-label="Buscar documentos" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="API_metadata.html">Functions.API_metadata module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BBDD_functions.html">Functions.BBDD_functions module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Chatbot_functions.html">Functions.Chatbot_functions module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Docling_OCR.html">Functions.Docling_OCR module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Functions.Embeddings module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Embeddings.carga_BAAI"><code class="docutils literal notranslate"><span class="pre">carga_BAAI()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Embeddings.embedding"><code class="docutils literal notranslate"><span class="pre">embedding()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Embeddings.embedding_ETL"><code class="docutils literal notranslate"><span class="pre">embedding_ETL()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Embeddings.embedding_ETL_DOC_ENRI"><code class="docutils literal notranslate"><span class="pre">embedding_ETL_DOC_ENRI()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Embeddings.embedding_evaluator"><code class="docutils literal notranslate"><span class="pre">embedding_evaluator()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Enriquecimiento_documento.html">Functions.Enriquecimiento_documento module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Florence_2_anotacion.html">Functions.Florence_2_anotacion module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Loggers.html">Functions.Loggers module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MarianMT_traductor.html">Functions.MarianMT_traductor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PDF_descarga.html">Functions.PDF_descarga module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Lervis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Functions.Embeddings module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Embeddings.rst.txt" rel="nofollow"> Ver código fuente de la página</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-Functions.Embeddings">
+<span id="functions-embeddings-module"></span><h1>Functions.Embeddings module<a class="headerlink" href="#module-Functions.Embeddings" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Embeddings.carga_BAAI">
+<span class="sig-prename descclassname"><span class="pre">Functions.Embeddings.</span></span><span class="sig-name descname"><span class="pre">carga_BAAI</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Embeddings.carga_BAAI" title="Link to this definition"></a></dt>
+<dd><p>Carga el modelo de embeddings BGE-M3 de BAAI utilizando la biblioteca FlagEmbedding.</p>
+<p>Esta función carga el modelo BAAI/bge-m3 en modo FP16 para optimizar el rendimiento.</p>
+<p>Es útil para tareas de generación de embeddings densos y dispersos.</p>
+<p>En caso de éxito, se registra un mensaje en el logger.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Objeto del modelo cargado listo para generar embeddings.</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>BGEM3FlagModel</p>
+</dd>
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la carga del modelo.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Embeddings.embedding">
+<span class="sig-prename descclassname"><span class="pre">Functions.Embeddings.</span></span><span class="sig-name descname"><span class="pre">embedding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Embeddings.embedding" title="Link to this definition"></a></dt>
+<dd><p>Genera embeddings densos y dispersos para un texto dado utilizando un modelo de embeddings.</p>
+<p>Esta función utiliza el modelo proporcionado para calcular los vectores de representación del texto
+en dos formatos: uno denso  y otro disperso.</p>
+<dl>
+<dt>Parámetros:</dt><dd><p>text (str): Texto de entrada sobre el cual se generarán los embeddings.
+model: Modelo compatible con retorno de vectores densos y dispersos.</p>
+</dd>
+<dt>Retorna:</dt><dd><dl>
+<dt>tuple: Una tupla que contiene:</dt><dd><ul class="simple">
+<li><p>numpy.ndarray: Embedding denso del texto.</p></li>
+<li><p>default dict: Embedding disperso representado como un diccionario donde se meustran los tokens</p></li>
+</ul>
+<p>con mayor relevancia y los que no estan como clave poseen el valor default definido.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la generación de los embeddings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Embeddings.embedding_ETL">
+<span class="sig-prename descclassname"><span class="pre">Functions.Embeddings.</span></span><span class="sig-name descname"><span class="pre">embedding_ETL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_documento_enriquecido</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id_documento</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Embeddings.embedding_ETL" title="Link to this definition"></a></dt>
+<dd><p>Genera embeddings densos y dispersos para un texto dado, y calcula la similitud con un documento enriquecido.</p>
+<p>Esta función genera representaciones vectoriales del texto tanto en formato denso como disperso.
+Además, calcula la similitud coseno entre el embedding generado y un embedding de referencia
+correspondiente a un documento previamente enriquecido.</p>
+<dl class="simple">
+<dt>Parámetros:</dt><dd><p>text (str): Texto de entrada para generar el embedding.
+embedding_documento_enriquecido (np.ndarray): Embedding denso del documento completo para comparación.
+id_documento (str o int): Identificador del documento (usado para trazabilidad).
+model: Modelo compatible con retorno de vectores densos y dispersos.</p>
+</dd>
+<dt>Retorna:</dt><dd><dl class="simple">
+<dt>tuple:</dt><dd><ul class="simple">
+<li><p>numpy.ndarray: Vector de embedding denso del texto.</p></li>
+<li><p>dict: Embedding disperso representado como diccionario léxico.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la generación de los embeddings o el cálculo de similitud.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Embeddings.embedding_ETL_DOC_ENRI">
+<span class="sig-prename descclassname"><span class="pre">Functions.Embeddings.</span></span><span class="sig-name descname"><span class="pre">embedding_ETL_DOC_ENRI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Embeddings.embedding_ETL_DOC_ENRI" title="Link to this definition"></a></dt>
+<dd><p>Genera embeddings densos y dispersos para fragmentos (chunks) de un documento enriquecido.</p>
+<p>Esta función utiliza un modelo de embeddings para transformar el texto de un documento
+en vectores densos y dispersos. Registra métricas útiles para trazabilidad.</p>
+<dl class="simple">
+<dt>Parámetros:</dt><dd><p>text (str): Texto del documento a embebir.
+id (str o int): Identificador del documento (usado para trazabilidad en logs).
+model: Modelo compatible con retorno de vectores densos y dispersos.</p>
+</dd>
+<dt>Retorna:</dt><dd><dl class="simple">
+<dt>tuple:</dt><dd><ul class="simple">
+<li><p>numpy.ndarray: Embedding denso del documento.</p></li>
+<li><p>dict: Embedding disperso representado como diccionario léxico.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la generación de embeddings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Embeddings.embedding_evaluator">
+<span class="sig-prename descclassname"><span class="pre">Functions.Embeddings.</span></span><span class="sig-name descname"><span class="pre">embedding_evaluator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Embeddings.embedding_evaluator" title="Link to this definition"></a></dt>
+<dd><p>Genera embeddings densos y dispersos para un texto dado utilizando un modelo de embeddings. Especificamente
+esta funcion se ha creado con la finalidad de segmentar el proceso de embedding del input del usuario y la salida
+del LLM para realizar metricas entre estos.</p>
+<p>Esta función utiliza el modelo proporcionado para calcular los vectores de representación del texto
+en dos formatos: uno denso  y otro disperso.</p>
+<dl>
+<dt>Parámetros:</dt><dd><p>text (str): Texto de entrada sobre el cual se generarán los embeddings.
+model: Modelo compatible con retorno de vectores densos y dispersos.</p>
+</dd>
+<dt>Retorna:</dt><dd><dl>
+<dt>tuple: Una tupla que contiene:</dt><dd><ul class="simple">
+<li><p>numpy.ndarray: Embedding denso del texto.</p></li>
+<li><p>default dict: Embedding disperso representado como un diccionario donde se meustran los tokens</p></li>
+</ul>
+<p>con mayor relevancia y los que no estan como clave poseen el valor default definido.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la generación de los embeddings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Pie de página">
+        <a href="Docling_OCR.html" class="btn btn-neutral float-left" title="Functions.Docling_OCR module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Anterior</a>
+        <a href="Enriquecimiento_documento.html" class="btn btn-neutral float-right" title="Functions.Enriquecimiento_documento module" accesskey="n" rel="next">Siguiente <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Derechos de autor 2025, Roi Pereira Fiuza.</p>
+  </div>
+
+  Compilado con <a href="https://www.sphinx-doc.org/">Sphinx</a> usando un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">tema</a>
+    proporcionado por <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

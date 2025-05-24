@@ -16,18 +16,21 @@ logger = crear_logger('Florence2', 'florence2.log')
 
 def Carga_FLorence2_modelo():
     """
-    Carga el modelo de Florence-2 y el procesador de texto.
+    Carga el modelo de anotacion de imagenes Florence-2 y su procesador correspondiente.
 
-    Parámetros:
-    -----------
-    model_id : str
-        Identificador del modelo de Florence-2.
+    Esta función descarga y configura el modelo Florence-2 de Microsoft, preparado para ejecutarse 
+    en GPU. También carga su procesador asociado para el preprocesamiento de datos de entrada (imagen y texto).
 
-    Retorna:
-    --------
-    tuple
-        Una tupla que contiene el identificador del modelo, el modelo y el procesador.
+    Returns:
+        tuple: Una tupla que contiene:
+            - str: Identificador del modelo cargado.
+            - transformers.PreTrainedModel: Instancia del modelo Florence-2 listo para inferencia.
+            - transformers.PreTrainedProcessor: Procesador asociado para preparar las entradas.
+    
+    Logs:
+        - Mensaje de éxito al cargar el modelo.
     """
+
     model_id='microsoft/Florence-2-large'
     logger.info(f"Modelo {model_id} cargado con exito.")
 
@@ -38,18 +41,27 @@ def Carga_FLorence2_modelo():
 
 
 def Florence2_detailed_annotation(model, processor, image: Image, task_prompt='<MORE_DETAILED_CAPTION>', text_input=None):
+    """
+    Genera una anotación detallada para una imagen utilizando el modelo Florence-2.
+
+    Esta función utiliza el modelo para generar descripciones enriquecidas de una imagen. 
+
+    Parámetros:
+        model: Modelo para generación de anotaciones.
+        processor: Procesador asociado al modelo.
+        image (PIL.Image): Imagen que se desea anotar.
+        task_prompt (str, opcional): Prompt que define el tipo de anotación a generar. Por defecto '<MORE_DETAILED_CAPTION>'.
+        text_input (str, opcional): Texto adicional que puede complementar el prompt. Por defecto None.
+
+    Retorna:
+        dict: Diccionario con la anotación generada por el modelo, estructurada por tipo de prompt (clave = task_prompt).
+
+    Raises:
+        Exception: En caso de fallo durante la inferencia o el postprocesamiento de la anotación.
+    """  
+
     try:
-        """
-        Genera una anotación detallada para una imagen dada utilizando el modelo y procesador especificados.
-        Args:
-            model: El modelo preentrenado utilizado para generar anotaciones.
-            processor: El procesador utilizado para preparar entradas y decodificar salidas.
-            image (Image): La imagen a anotar.
-            task_prompt (str, opcional): El prompt para guiar la tarea de anotación. Por defecto es '<MORE_DETAILED_CAPTION>'.
-            text_input (str, opcional): Entrada de texto adicional que se añadirá al prompt de la tarea. Por defecto es None.
-        Returns:
-            str: La anotación detallada generada para la imagen.
-        """  
+    
         
         if text_input is None:
             prompt = task_prompt

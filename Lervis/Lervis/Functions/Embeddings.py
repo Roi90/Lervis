@@ -11,13 +11,23 @@ logger_Doc_Enri = crear_logger('Embedding_chunk_Doc_Enri_ETL', 'Embedding_chunk_
 
 def embedding(text, model):
     """
-    Genera embeddings para el texto dado utilizando el modelo y el tokenizador especificados.
-    Args:
-        text (str): El texto de entrada a ser embebido.
-        model (transformers.PreTrainedModel): El modelo preentrenado para generar embeddings.
-        tokenizer (transformers.PreTrainedTokenizer): El tokenizador asociado con el modelo.
-    Returns:
-        numpy.ndarray: Los embeddings del texto de entrada.
+    Genera embeddings densos y dispersos para un texto dado utilizando un modelo de embeddings.
+
+    Esta función utiliza el modelo proporcionado para calcular los vectores de representación del texto
+    en dos formatos: uno denso  y otro disperso.
+
+    Parámetros:
+        text (str): Texto de entrada sobre el cual se generarán los embeddings.
+        model: Modelo compatible con retorno de vectores densos y dispersos.
+
+    Retorna:
+        tuple: Una tupla que contiene:
+            - numpy.ndarray: Embedding denso del texto.
+            - default dict: Embedding disperso representado como un diccionario donde se meustran los tokens
+            con mayor relevancia y los que no estan como clave poseen el valor default definido.
+
+    Raises:
+        Exception: Si ocurre un error durante la generación de los embeddings.
     """
 
     try:
@@ -50,13 +60,25 @@ def embedding(text, model):
 
 def embedding_ETL(text, embedding_documento_enriquecido, id_documento, model):
     """
-    Genera embeddings para el texto dado utilizando el modelo y el tokenizador especificados.
-    Args:
-        text (str): El texto de entrada a ser embebido.
-        model (transformers.PreTrainedModel): El modelo preentrenado para generar embeddings.
-        tokenizer (transformers.PreTrainedTokenizer): El tokenizador asociado con el modelo.
-    Returns:
-        numpy.ndarray: Los embeddings del texto de entrada.
+    Genera embeddings densos y dispersos para un texto dado, y calcula la similitud con un documento enriquecido.
+
+    Esta función genera representaciones vectoriales del texto tanto en formato denso como disperso.
+    Además, calcula la similitud coseno entre el embedding generado y un embedding de referencia
+    correspondiente a un documento previamente enriquecido.
+
+    Parámetros:
+        text (str): Texto de entrada para generar el embedding.
+        embedding_documento_enriquecido (np.ndarray): Embedding denso del documento completo para comparación.
+        id_documento (str o int): Identificador del documento (usado para trazabilidad).
+        model: Modelo compatible con retorno de vectores densos y dispersos.
+
+    Retorna:
+        tuple:
+            - numpy.ndarray: Vector de embedding denso del texto.
+            - dict: Embedding disperso representado como diccionario léxico.
+
+    Raises:
+        Exception: Si ocurre un error durante la generación de los embeddings o el cálculo de similitud.
     """
 
     try:
@@ -90,13 +112,23 @@ def embedding_ETL(text, embedding_documento_enriquecido, id_documento, model):
 
 def embedding_ETL_DOC_ENRI(text,id, model):
     """
-    Genera embeddings para el texto dado utilizando el modelo y el tokenizador especificados.
-    Args:
-        text (str): El texto de entrada a ser embebido.
-        model (transformers.PreTrainedModel): El modelo preentrenado para generar embeddings.
-        tokenizer (transformers.PreTrainedTokenizer): El tokenizador asociado con el modelo.
-    Returns:
-        numpy.ndarray: Los embeddings del texto de entrada.
+    Genera embeddings densos y dispersos para fragmentos (chunks) de un documento enriquecido.
+
+    Esta función utiliza un modelo de embeddings para transformar el texto de un documento
+    en vectores densos y dispersos. Registra métricas útiles para trazabilidad.
+
+    Parámetros:
+        text (str): Texto del documento a embebir.
+        id (str o int): Identificador del documento (usado para trazabilidad en logs).
+        model: Modelo compatible con retorno de vectores densos y dispersos.
+
+    Retorna:
+        tuple:
+            - numpy.ndarray: Embedding denso del documento.
+            - dict: Embedding disperso representado como diccionario léxico.
+
+    Raises:
+        Exception: Si ocurre un error durante la generación de embeddings.
     """
 
     try:
@@ -129,13 +161,25 @@ def embedding_ETL_DOC_ENRI(text,id, model):
 
 def embedding_evaluator(text, model):
     """
-    Genera embeddings para el texto dado utilizando el modelo y el tokenizador especificados.
-    Args:
-        text (str): El texto de entrada a ser embebido.
-        model (transformers.PreTrainedModel): El modelo preentrenado para generar embeddings.
-        tokenizer (transformers.PreTrainedTokenizer): El tokenizador asociado con el modelo.
-    Returns:
-        numpy.ndarray: Los embeddings del texto de entrada.
+    Genera embeddings densos y dispersos para un texto dado utilizando un modelo de embeddings. Especificamente
+    esta funcion se ha creado con la finalidad de segmentar el proceso de embedding del input del usuario y la salida
+    del LLM para realizar metricas entre estos.
+
+    Esta función utiliza el modelo proporcionado para calcular los vectores de representación del texto
+    en dos formatos: uno denso  y otro disperso.
+
+    Parámetros:
+        text (str): Texto de entrada sobre el cual se generarán los embeddings.
+        model: Modelo compatible con retorno de vectores densos y dispersos.
+
+    Retorna:
+        tuple: Una tupla que contiene:
+            - numpy.ndarray: Embedding denso del texto.
+            - default dict: Embedding disperso representado como un diccionario donde se meustran los tokens
+            con mayor relevancia y los que no estan como clave poseen el valor default definido.
+
+    Raises:
+        Exception: Si ocurre un error durante la generación de los embeddings.
     """
 
     try:
@@ -152,12 +196,21 @@ def embedding_evaluator(text, model):
 
 def carga_BAAI():
     """
-        Carga el modelo y el tokenizer de BAAI BGEM3.
-        Esta función carga el modelo "BAAI/bge-m3" utilizando la biblioteca FlagEmbedding.
-        Además, registra un mensaje de éxito una vez que el modelo se ha cargado correctamente.
-        Returns:
-            model (BGEM3FlagModel): El modelo BGEM3 cargado.
-        """
+    Carga el modelo de embeddings BGE-M3 de BAAI utilizando la biblioteca FlagEmbedding.
+
+    Esta función carga el modelo BAAI/bge-m3 en modo FP16 para optimizar el rendimiento.
+
+    Es útil para tareas de generación de embeddings densos y dispersos. 
+    
+    En caso de éxito, se registra un mensaje en el logger.
+
+    Returns:
+        BGEM3FlagModel: Objeto del modelo cargado listo para generar embeddings.
+
+    Raises:
+        Exception: Si ocurre un error durante la carga del modelo.
+    """
+
     try:
         model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)   
         logger.info(f"Modelo 'BAAI/bge-m3' cargado con exito.")
@@ -168,9 +221,3 @@ def carga_BAAI():
         raise
 
 
-modelo = carga_BAAI()
-
-text ='Ejemplo: Similitud con sparse en forma de luz'
-
-denso, sparse = embedding_evaluator(text, modelo)
-print(sparse)

@@ -16,6 +16,29 @@ from Functions.Loggers import crear_logger
 logger = crear_logger('Doc_Enriquecido', 'Doc_Enriquecido.log')
 
 def enriquecimiento_doc(dataset, F2_model, F2_processor):
+    """
+    Enriquecimiento de un documento OCR añadiendo anotaciones a imágenes y tablas.
+
+    Esta función recorre las páginas de un documento procesado por OCR (formato Dataset),
+    y enriquece el texto del documento extrayendo cabeceras, notas al pie, y aplicando un modelo de anotacion de imagenes
+    (Florence-2) a los segmentos que contienen imágenes o tablas, generando descripciones e insertando estas en el documento.
+
+    Args:
+        dataset (Dataset): Dataset resultante del proceso OCR, que incluye imágenes, texto y segmentos.
+        F2_model: Modelo de Florence-2 usado para generar anotaciones.
+        F2_processor: Procesador asociado al modelo Florence-2.
+
+    Returns:
+        str: Texto enriquecido del documento, incluyendo cabeceras, notas al pie y descripciones generadas.
+
+    Raises:
+        ValueError: Si el resultado final está vacío tras el procesamiento.
+
+    Logs:
+        - Errores al procesar el dataset o al generar anotaciones con Florence-2.
+        - Advertencias si el resultado del modelo visual no es el esperado.
+    """
+
     if not dataset or len(dataset) == 0:
         logger.error("El dataset está vacío o no es válido.")
         return None 

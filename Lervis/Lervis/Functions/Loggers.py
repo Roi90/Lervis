@@ -8,21 +8,24 @@ import logging
 import os
 
 def crear_logger(nombre: str, archivo_log: str) -> logging.Logger:
+    """
+    Crea y configura un logger personalizado para el proyecto, con salida tanto a consola como a archivo.
 
-    """
-    Crea y configura un logger único para el proyecto.
+    Este logger permite registrar eventos del sistema con nivel de detalle (DEBUG) y formatea los mensajes 
+    en un formato consistente para ser reutilizado para su analisis.
     
+    Si el archivo de log no existe, lo crea con una cabecera descriptiva.
+
     Parámetros:
-    ------------
-    nombre : str
-        Nombre del logger.
-    archivo_log : str
-        Nombre del archivo .log donde guardar los logs.
-    
+        nombre (str): Nombre identificador del logger.
+        archivo_log (str): Nombre del archivo .log donde se almacenarán los registros. 
+        El archivo se guarda en la carpeta 'Logs' del proyecto.
+
     Retorna:
-    --------
-    logging.Logger: Logger configurado
+        logging.Logger: Objeto `Logger` configurado con salida a consola y archivo.
+        
     """
+
     logger = logging.getLogger(nombre)
     
     if not logger.hasHandlers():

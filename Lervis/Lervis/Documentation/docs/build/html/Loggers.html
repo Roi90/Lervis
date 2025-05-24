@@ -1,0 +1,142 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="es" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Functions.Loggers module &mdash; documentación de Lervis - 1.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=4936afed"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=f85f4cfb"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Índice" href="genindex.html" />
+    <link rel="search" title="Búsqueda" href="search.html" />
+    <link rel="next" title="Functions.MarianMT_traductor module" href="MarianMT_traductor.html" />
+    <link rel="prev" title="Functions.Florence_2_anotacion module" href="Florence_2_anotacion.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Lervis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Buscar documentos" aria-label="Buscar documentos" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="API_metadata.html">Functions.API_metadata module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BBDD_functions.html">Functions.BBDD_functions module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Chatbot_functions.html">Functions.Chatbot_functions module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Docling_OCR.html">Functions.Docling_OCR module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Embeddings.html">Functions.Embeddings module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Enriquecimiento_documento.html">Functions.Enriquecimiento_documento module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Florence_2_anotacion.html">Functions.Florence_2_anotacion module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Functions.Loggers module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Loggers.crear_logger"><code class="docutils literal notranslate"><span class="pre">crear_logger()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MarianMT_traductor.html">Functions.MarianMT_traductor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PDF_descarga.html">Functions.PDF_descarga module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Lervis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Functions.Loggers module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Loggers.rst.txt" rel="nofollow"> Ver código fuente de la página</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-Functions.Loggers">
+<span id="functions-loggers-module"></span><h1>Functions.Loggers module<a class="headerlink" href="#module-Functions.Loggers" title="Link to this heading"></a></h1>
+<p>Este archivo contiene funciones para declarar y configurar los distintos loggers que hay.</p>
+<p>Autor: Roi Pereira Fiuza
+Fecha: 08/03/2024</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Loggers.crear_logger">
+<span class="sig-prename descclassname"><span class="pre">Functions.Loggers.</span></span><span class="sig-name descname"><span class="pre">crear_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nombre</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">archivo_log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="headerlink" href="#Functions.Loggers.crear_logger" title="Link to this definition"></a></dt>
+<dd><p>Crea y configura un logger personalizado para el proyecto, con salida tanto a consola como a archivo.</p>
+<p>Este logger permite registrar eventos del sistema con nivel de detalle (DEBUG) y formatea los mensajes
+en un formato consistente para ser reutilizado para su analisis.</p>
+<p>Si el archivo de log no existe, lo crea con una cabecera descriptiva.</p>
+<dl class="simple">
+<dt>Parámetros:</dt><dd><p>nombre (str): Nombre identificador del logger.
+archivo_log (str): Nombre del archivo .log donde se almacenarán los registros.
+El archivo se guarda en la carpeta “Logs” del proyecto.</p>
+</dd>
+<dt>Retorna:</dt><dd><p>logging.Logger: Objeto <cite>Logger</cite> configurado con salida a consola y archivo.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Pie de página">
+        <a href="Florence_2_anotacion.html" class="btn btn-neutral float-left" title="Functions.Florence_2_anotacion module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Anterior</a>
+        <a href="MarianMT_traductor.html" class="btn btn-neutral float-right" title="Functions.MarianMT_traductor module" accesskey="n" rel="next">Siguiente <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Derechos de autor 2025, Roi Pereira Fiuza.</p>
+  </div>
+
+  Compilado con <a href="https://www.sphinx-doc.org/">Sphinx</a> usando un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">tema</a>
+    proporcionado por <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

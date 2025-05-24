@@ -1,11 +1,3 @@
-"""
-Este archivo contiene funciones para extraer datos de la API de arXiv.
-Proporciona métodos para buscar artículos, obtener detalles de los autores y
-filtrar resultados por fecha de publicación.
-
-Autor: Roi Pereira Fiuza
-Fecha: 08/03/2024
-"""
 from Static_data import categorias_arxiv
 import requests
 from Functions.Loggers import crear_logger
@@ -20,23 +12,24 @@ logger = crear_logger('Extraccion_arxiv', 'extraccion_arxiv.log')
 
 def extraer_publicaciones_arxiv(categoria, max_resultados=1, ordenar_por='submittedDate', orden_descendente=True):
     """
-    Extrae publicaciones de arXiv.org usando su API.
-    
-    Parámetros:
-    -----------
-    categoria : str
-        Categoría de arXiv (ej. 'cs.AI', 'physics.gen-ph', 'math')
-    max_resultados : int
-        Número máximo de resultados a devolver (por defecto 10)
-    ordenar_por : str
-        Campo por el cual ordenar los resultados ('submittedDate', 'relevance', 'lastUpdatedDate')
-    orden_descendente : bool
-        Si es True, ordena en orden descendente (más reciente primero)
-        
-    Retorna:
-    --------
-    DataFrame de pandas con las publicaciones encontradas
-    """        
+    Extrae publicaciones académicas desde la API de arXiv.org según una categoría especificada.
+
+    Realiza una consulta HTTP a la API de arXiv y transforma la respuesta en un DataFrame estructurado con los metadatos relevantes.
+
+    Args:
+        categoria (str): Categoría de arXiv (por ejemplo, 'cs.AI').
+        max_resultados (int): Número máximo de publicaciones a recuperar. Por defecto es 1.
+        ordenar_por (str): Criterio de ordenación . Por defecto es 'submittedDate'.
+        orden_descendente (bool, optional): Si True, ordena los resultados de forma descendente. Por defecto es True.
+
+    Returns:
+        DataFrame: DataFrame con las publicaciones encontradas, incluyendo título, autores, resumen,
+        fecha de publicación, categorías, URL del PDF, identificador de arXiv y categoría principal.
+
+    Raises:
+        requests.exceptions.RequestException: Si ocurre un error al hacer la solicitud HTTP.
+        Exception: Si ocurre un error inesperado durante el procesamiento de los datos.
+    """
 
     logger.debug(f"Iniciando búsqueda de publicaciones en arXiv para categoría: {categoria}")
     logger.debug(f"Parámetros: max_resultados={max_resultados}, ordenar_por={ordenar_por}, orden_descendente={orden_descendente}")
@@ -112,16 +105,23 @@ def extraer_publicaciones_arxiv(categoria, max_resultados=1, ordenar_por='submit
     
 def extraccion_por_categorias(conn, categorias_id_dict ,max_resultados=1):
     """
-    Ejecuta la función extraer_publicaciones_arxiv iterando por todas las categorías definidas en categorias_arxiv.
-        
-    Parámetros:
-    -----------
-    max_resultados : int
-        Número máximo de resultados a devolver por categoría (por defecto 1000)
-    
-    Retorna:
-    --------
-    DataFrame de pandas con los metadatos de las publicaciones descargadas de todas las categorías.
+    Extrae publicaciones de arXiv iterando por múltiples categorías y devuelve los resultados nuevos.
+
+    Esta función ejecuta `extraer_publicaciones_arxiv` para cada categoría presente en `categorias_id_dict`,
+    recupera los metadatos de las publicaciones y filtra aquellas ya presentes en la base de datos
+    para evitar duplicados.
+
+    Args:
+        conn (psycopg.Connection): Conexión activa a la base de datos PostgreSQL.
+        categorias_id_dict (dict): Diccionario donde las claves son los identificadores de categorías de arXiv.
+        max_resultados (int, optional): Número máximo de resultados a extraer por categoría. Por defecto es 1.
+
+    Returns:
+        DataFrame: DataFrame con los metadatos de las publicaciones nuevas (no insertadas previamente en la BBDD).
+
+    Logs:
+        - Informa del inicio y fin de la extracción por cada categoría.
+        - Reporta errores en la conexión o consulta a la base de datos.
     """
     df_lst = []
     for i in tqdm(categorias_id_dict.keys()):
@@ -149,32 +149,20 @@ def extraccion_por_categorias(conn, categorias_id_dict ,max_resultados=1):
 # ----- Funciones para filtrado en la extraccion ------
 def consulta_id_arxiv(conn) -> list:
     """
-    Recupera una lista de identificadores de arXiv desde la base de datos.
+    Consulta la base de datos y obtiene todos los identificadores únicos de publicaciones de arXiv.
+
+    Esta función accede a la tabla publicaciones de la base de datos y devuelve una lista
+    con todos los valores únicos de la columna identificador_arxiv.
 
     Args:
-        conn (psycopg.Connection): Conexión a la base de datos.
+        conn (psycopg.Connection): Conexión activa a la base de datos PostgreSQL.
 
     Returns:
-        list: Lista de identificadores de arXiv únicos presentes en la base de datos.
+        list: Lista de strings, cada uno representando un identificador de arXiv único.
     """
     with conn.cursor() as cur:
         cur.execute("SELECT identificador_arxiv FROM publicaciones;")
         result = cur.fetchall()
     return list(set([row['identificador_arxiv'] for row in result]))
 
-def filtrar_ayer(df: pd.DataFrame):
-    """
-    Filtra un DataFrame para obtener las filas cuya fecha de publicación es la de ayer.
-    Args:
-        df (pd.DataFrame): DataFrame que contiene una columna 'fecha_publicacion' con fechas en formato 'YYYY-MM-DD'.
-    Returns:
-        pd.DataFrame: DataFrame filtrado con las filas cuya 'fecha_publicacion' es igual a la fecha de ayer.
-    """
 
-    # Calcular la fecha de ayer
-    ayer = datetime.now() - timedelta(days=1)
-    # Formato 2025-01-01
-    fecha_ayer = ayer.strftime('%Y-%m-%d')
-
-    df_filtrado = df[df['fecha_publicacion'] == fecha_ayer]
-    return df_filtrado

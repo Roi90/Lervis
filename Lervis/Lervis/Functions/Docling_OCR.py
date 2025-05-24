@@ -26,12 +26,20 @@ IMAGE_RESOLUTION_SCALE = 1.0
 
 def transform_bytes_to_image(examples):
         """
-        Transforma los ejemplos proporcionados convirtiendo los bytes de la imagen en una imagen RGB.
+        Convierte una imagen representada en bytes en un objeto de imagen RGB de PIL.
+
+        Esta función toma un diccionario que contiene las dimensiones y los datos en bytes de una imagen
+        y los transforma en un objeto de imagen utilizando la librería PIL (Python Imaging Library).
+
         Args:
-            examples (dict): Un diccionario que contiene los datos de los ejemplos. Debe incluir las claves 
-                             "image.width", "image.height" y "image.bytes".
+            examples (dict): Diccionario que debe contener las siguientes claves:
+                - image.width (int): Ancho de la imagen.
+                - image.height (int): Alto de la imagen.
+                - image.bytes (bytes): Contenido de la imagen en formato de bytes en modo RGB.
+
         Returns:
-            dict: El diccionario de ejemplos actualizado con la imagen convertida en formato RGB.
+            dict o None: El mismo diccionario con la clave adicional image que contiene un objeto PIL.Image.
+            Devuelve None si ocurre un error durante la conversión.
         """
         try:
             examples["image"] = Image.frombytes('RGB', (examples["image.width"], examples["image.height"]), examples["image.bytes"], 'raw')
@@ -45,12 +53,18 @@ def transform_bytes_to_image(examples):
 
 def Carga_Docling_OCR():
     """
-    Configura el pipeline de OCR para procesar documentos PDF.
+    Configura y carga un pipeline OCR para la conversión de documentos PDF usando Docling.
 
-    Retorna:
-    --------
-    DocumentConverter
-        Un objeto DocumentConverter configurado para procesar documentos PDF con OCR.
+    Esta función inicializa un objeto DocumentConverter que está configurado para:
+    - Procesar archivos en formato PDF.
+    - Generar imágenes de las páginas procesadas.
+    - Mantener la escala original de las imágenes.
+
+    Returns:
+        DocumentConverter: Objeto configurado para realizar OCR sobre documentos PDF.
+
+    Raises:
+        Exception: Si ocurre un error durante la configuración del pipeline OCR.
     """
     try:
         pipeline_options = PdfPipelineOptions()
@@ -69,19 +83,21 @@ def Carga_Docling_OCR():
 
 def Archivo_to_OCR(input_doc_path: str, doc_converter: DocumentConverter) -> Dataset:
     """
-    Procesa un documento PDF con OCR y devuelve un Dataset con los resultados.
+    Procesa un documento PDF con OCR utilizando Docling y devuelve un Dataset estructurado con los resultados.
+
+    Esta función convierte un documento PDF en texto segmentado página por página, incluyendo metadatos de la imagen,
+    contenido textual y estructuras detectadas por el OCR.
 
     Parámetros:
-    -----------
-    input_doc_path : str
-        Ruta del documento PDF a procesar.
-    doc_converter : DocumentConverter
-        Objeto DocumentConverter configurado para procesar documentos PDF con OCR.
+        input_doc_path (str): Ruta al documento PDF que se desea procesar.
+        doc_converter (DocumentConverter): Objeto configurado de Docling para convertir documentos PDF mediante OCR.
 
     Retorna:
-    --------
-    Dataset
-        Dataset con los resultados del OCR.
+        Dataset: Objeto Dataset que contiene la información estructurada del documento,
+                 incluyendo texto, metadatos e imágenes por página.
+
+    Raises:
+        Exception: Si ocurre algún error durante el procesamiento del documento.
     """
     try:
         # Archivo input

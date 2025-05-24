@@ -22,15 +22,16 @@ logger_llama_intencion = crear_logger('Llama3_1_intencion', 'Llama3_1_intencion.
 
 def eliminacion_acentos(user_input: str) -> str:
     """
-    Elimina los acentos de las vocales en una cadena de texto dada.
-    Esta función reemplaza las vocales acentuadas (tanto en minúsculas como en mayúsculas)
-    por sus equivalentes sin acento. Por ejemplo, 'á' se reemplaza por 'a', 'É' se reemplaza
-    por 'E', etc.
+    Elimina los acentos de las vocales en una cadena de texto y la convierte a minúsculas.
+
+    Esta función reemplaza las vocales acentuadas tanto en minúsculas como en mayúsculas
+    por sus equivalentes sin acento, y transforma todo el texto a minúsculas.
+
     Args:
-        user_input (str): La cadena de texto de entrada que puede contener vocales acentuadas.
+        user_input (str): Cadena de texto que puede contener vocales acentuadas.
+
     Returns:
-        str: La cadena de texto resultante con las vocales acentuadas reemplazadas por sus
-        equivalentes sin acento.
+        str: Texto sin acentos y en minúsculas.
     """
 
     # Definir la expresión regular para reemplazar las vocales acentuadas
@@ -52,19 +53,38 @@ def eliminacion_acentos(user_input: str) -> str:
 
     return user_input
 
-def limitador_contexto(input_context: str, max_chars: int = 200000) -> str:
+def limitador_contexto(input_context: list, max_men: int = 50) -> list:
     """
-    Recorta el contexto si supera un número máximo de caracteres.
-    Mantiene los últimos caracteres más recientes.
+    Limita la longitud del historial de contexto eliminando los mensajes más antiguos.
+
+    Si el número de mensajes excede el límite definido por max_men, 
+    los mensajes más antiguos se eliminan para mantener el tamaño permitido.
+
+    Args:
+        input_context (list): Lista de mensajes que representa el historial del contexto.
+        max_men (int, optional): Número máximo de mensajes permitidos. Por defecto es 50.
+
+    Returns:
+        list: Lista de mensajes truncada si se excede el máximo permitido.
     """
-    if len(input_context) > max_chars:
-        return input_context[-max_chars:]
+    exceso = len(input_context) - max_men
+    if exceso > 0:
+        return input_context[exceso:]
     return input_context
 
 def actualizacion_informacion_inicial():
     """
-    Actualiza la información inicial del chatbot.
-    Esta función se puede utilizar para modificar el contexto inicial que el chatbot utiliza para responder a las preguntas.
+    Actualiza la información contextual inicial utilizada por el LLM.
+
+    Esta función se conecta a la base de datos y genera un resumen actualizado
+    con la fecha mínima y máxima de publicación, el número total de publicaciones,
+    y un enlace a la página principal de ArXiv. 
+
+    Returns:
+        str: Cadena de texto con la información inicial formateada.
+    
+    Raises:
+        Exception: Si ocurre un error al conectar o consultar la base de datos.
     """
     # Variable para almacenar la información inicial actualizada
     info_incial = ''
@@ -106,6 +126,25 @@ def actualizacion_informacion_inicial():
     return info_incial
 
 def deteccion_temporalidad(user_input: str):
+    """
+    Detecta y clasifica referencias temporales presentes en el input del usuario.
+
+    Analiza el texto para identificar meses, años o expresiones temporales comunes. 
+    
+    Clasifica la detección como una de las siguientes categorías:
+    - Combinada: Detecta meses y años.
+    - Mes: Detecta meses.
+    - Anio: Detecta años.
+    - EXP: Detecta una expresión temporal relativa, como ayer o últimos 3 días.
+    - None: Si no se encuentra ninguna referencia temporal.
+
+    Args:
+        user_input (str): Texto de entrada del usuario.
+
+    Returns:
+        tuple o None: Tupla con la categoría detectada, los valores asociados y el input original.
+                      None si no se detecta ninguna temporalidad.
+    """
 
     # Diccionario pensado para realizar consultas por año y mes
     mes_anio_dict = {
@@ -182,11 +221,32 @@ def deteccion_temporalidad(user_input: str):
         return None
 
 def deteccion_intencion(user_input: str) -> str:
+    """
+    Clasifica la intención del usuario en consultar o hablar, usando el LLM.
+
+    Esta función envía una instrucción al LLM para determinar si el input del usuario
+    tiene intención de:
+    - Consultar: cuando desea recuperar información de una base de datos.
+    - Hablar: cuando no se detectan verbos relacionados con la consulta.
+
+    El modelo debe responder exclusivamente con un JSON: 
+    { "intencion": "consultar" } o { "intencion": "hablar" }
+
+    Si la respuesta es inválida o el modelo falla, se asume por defecto que la intención es 'hablar'.
+
+    Args:
+        user_input (str): Texto introducido por el usuario.
+
+    Returns:
+        str: 'consultar' o 'hablar', según lo detectado por el modelo.
+    """
+
     system_prompt = (
     "Eres un clasificador cuya única función es decidir entre dos intenciones:\n\n"
-    "- consultar → El usuario quiere consultar, buscar, recuperar o encontrar información en la base de datos. "
-    "Usa 'consultar' si detectas verbos como consultar, buscar, encontrar, obtener, recuperar, listar, investigar, explorar o similares.\n"
-    "- hablar → Siempre que no encuentres los verbos de consultar sera hablar.\n\n"
+
+    "- consultar = El usuario quiere consultar, buscar, recuperar o encontrar información en la base de datos. "
+    "Usa 'consultar' si detectas verbos como consultar, buscar, encontrar, obtener, recuperar, listar, investigar, explorar.\n"
+    "- hablar = Siempre que no encuentres los verbos de consultar sera hablar.\n\n"
     "Debes RESPONDER **SIEMPRE** estrictamente con un JSON como uno de estos:\n"
     "{ \"intencion\": \"consultar\" }\n"
     "o\n"
@@ -202,7 +262,10 @@ def deteccion_intencion(user_input: str) -> str:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_input}
                 ],
-            stream=False 
+            stream=False,
+            options= {'temperature': 0.1, 
+                     "num_ctx":  1000, 
+                     "num_predict": 100}
         )
 
         texto_respuesta = response["message"]["content"]
@@ -231,23 +294,85 @@ def deteccion_intencion(user_input: str) -> str:
         return "hablar"
 
 
-def Llama3_1_API(system_prompt, context_prompt, user_prompt):
+def Llama3_1_API(system_prompt, context, user_prompt, rag_flow):
+    """
+    Genera una respuesta usando el LLM , ajustando los parámetros según el flujo RAG detectado.
+
+    Esta función configura dinámicamente los parámetros de temperatura, número de tokens de contexto 
+    y tokens de predicción en función del tipo de flujo (rag_flow) detectado. 
+    
+    Luego, realiza una llamada  a la API local de Ollama, del LLM en modo streaming.
+
+    Args:
+        system_prompt (str): Instrucción inicial del sistema que establece el comportamiento del modelo.
+        context (list): Lista de mensajes previos como historial de conversación.
+        user_prompt (str): Mensaje actual del usuario.
+        rag_flow (str): Tipo de flujo de generación. Puede ser:
+            - id_arxiv: Resumen detallado de documentos completos.
+            - consultar_temp: Consulta basada en temporalidad.
+            - consultar_docs_chunk: Recuperación basada en chunks.
+            - consultar_docs_resumen: Recuperación basada en resúmenes.
+            - hablar: Interacción generica de conversacion.
+            - recuperacion_vacia: Cuando no hay documentos encontrados en base a
+            la similitud.
+
+    Yields:
+        str: Fragmentos de texto generados por el modelo en tiempo real (streaming).
+
+    Raises:
+        Exception: Si se produce un error durante la llamada al modelo.
+    """
     try:
+        # Valores default para ser sobre escritos en funcion del flow
+        options= {'temperature': 0.3, 
+                     "num_ctx":  2048, 
+                     "num_predict": 2000} 
+
+        if rag_flow == 'id_arxiv':
+
+            options['temperature'] = 0.7 #Profesional pero mas abierto a mayores variaciones
+            options['num_ctx'] =  10000 # Gran ventana dado los grandes documentos
+            options['num_predict'] = 5000 # Generacion extensa dado el detalle buscado
+
+        elif rag_flow == 'consultar_temp':
+
+            options['temperature'] = 0.1 # super estricto
+            options['num_ctx'] = 100 #contexto minimo ya que la informacion introducida es minima
+            options['num_predict'] = 100 # generacion corta, dada la respuesta que se busca.
+        
+        elif rag_flow == 'consultar_docs_chunk':
+
+            options['temperature'] = 0.4 # Mayor creatividad
+            options['num_ctx'] = 5000 # Mayor contexto dado que se recuperan 2 documentos con sus metadatos
+            options['num_predict'] = 2000 # Suficiente para informar, pero sintetica
+
+        elif rag_flow == 'consultar_docs_resumen':
+
+            options['temperature'] = 0.4 # Mayor creatividad
+            options['num_ctx'] = 5000 # Mayor contexto dado que se recuperan 2 documentos con sus metadatos
+            options['num_predict'] = 2000 # Suficiente para informar, pero sintetica
+
+        elif rag_flow == 'hablar':
+
+            options['temperature'] = 0.9 # Maxima creatividad para la conversacion
+            options['num_ctx'] = 500 # Contexto para una conversacion, apuntando a las interacciones previas
+            options['num_predict'] = 1000 # Salida concisa
+
+        elif rag_flow == 'recuperacion_vacia':
+
+            options['temperature'] = 0.9 # Maxima creatividad para la conversacion
+            options['num_ctx'] = 500 # Contexto para una conversacion, apuntando a las interacciones previas
+            options['num_predict'] = 1000 # Salida concisa
+
+
+
         # Utiliza la API local.
         stream = chat(
             model="llama3.1",
             
-            messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "assistant", "content": context_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
+            messages=[{"role": "system", "content": system_prompt}] + context + [{"role": "user", "content": user_prompt}],
             stream=True,
-            options={'temperature': 0.3, # Se busca profesionalidad y certeza
-                     "num_ctx":  2048, # Ventana de tokens que puede manejar el modelo como entrada
-                     "num_predict": 800} # Número máximo de tokens que generará el modelo como salida
-            
-
+            options=options           
         )
 
         for part in stream:
@@ -274,26 +399,62 @@ def Llama3_1_API(system_prompt, context_prompt, user_prompt):
 
 def detectar_identificador_arxiv(user_input: str):
     """
-    Detecta si hay un identificador de arXiv válido en el texto del usuario.
+    Detecta si hay un identificador de arXiv válido dentro del texto proporcionado por el usuario.
+
+    Utiliza expresiones regulares para buscar identificadores válidos de arXiv.
 
     Args:
-        user_input (str): Texto introducido por el usuario.
+        user_input (str): Texto introducido por el usuario que podría contener un identificador de arXiv.
 
     Returns:
-        str | None: El identificador de arXiv si se encuentra, o None.
+        str o None: Identificador de arXiv encontrado sin el prefijo arXiv, o None si no se encuentra ninguno.
     """
-    patron_arxiv = r"(?:arxiv:)?(\d{4}\.\d{4,5}(?:v\d+)?|[a-z\-]+(?:\.[A-Z]{2})?/\d{7}(?:v\d+)?)"
+    patron_arxiv = r"(?:arxiv:)?(\d{4}\.\d{4,5}(?:v\d+)?"
+    # Ejemplo válido: 2101.12345v2 o arxiv:2101.12345
+        # (?:arxiv:)? =  Grupo opcional para el prefijo 'arxiv:'
+        # \d{4} = 4 dígitos del año, como 2101
+        # \. =  Punto literal
+        # \d{4,5} =  Número del artículo (4 o 5 dígitos)
+        # (?:v\d+)? =  Version opcional como v2 o v12
+
 
     match = re.search(patron_arxiv, user_input, re.IGNORECASE)
     if match:
         return match.group(1)
     return None
 
-def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embedding_model, traductor_model, traductor_tokenizer):
+def RAG_chat_V2(urls_usados, user_input:str, context, logger, conn, embedding_model, traductor_model, traductor_tokenizer):
 
-    context_prompt = context
-    user_prompt = user_input
+    """
+    Procesa una entrada de usuario utilizando un flujo RAG para generar una respuesta
+    personalizada basada en distintos escenarios: identificador de arXiv, consulta con temporalidad, recuperación de
+    documentos por embeddings, o conversación general.
 
+    Args:
+        urls_usados (set): Conjunto de URL ya utilizadas en el contexto para evitar duplicación de metadatos.
+        user_input (str): Entrada textual del usuario.
+        context (list): Lista de mensajes previos en el chat, que sirven como contexto.
+        logger: Logger para registrar eventos y errores.
+        conn: Conexión a la base de datos PostgreSQL.
+        embedding_model: Modelo de embeddings.
+        traductor_model: Modelo de traducción.
+        traductor_tokenizer: Tokenizador del modelo de traducción.
+
+    Returns:
+        tuple:
+            - system_prompt (str): Instrucción inicial del sistema para guiar al modelo de lenguaje.
+            - context (list): Contexto actualizado que será usado en la generación del LLM.
+            - rag_flow (str): Tipo de flujo RAG aplicado, que puede ser:
+                - id_arxiv: Identificador de arXiv detectado.
+                - consultar_temp: Consulta basada en temporalidad.
+                - consultar_docs_chunk: Consulta con recuperación por chunks.
+                - consultar_docs_resumen: Consulta con recuperación por resúmenes.
+                - recuperacion_vacia: No se recuperaron documentos relevantes.
+                - hablar: Interacción de conversación general.
+    """
+
+    rag_flow = ''
+    
     arxiv_detectado = detectar_identificador_arxiv(user_input)
     if arxiv_detectado:
         logger.debug(f"Arxiv id detectado: {arxiv_detectado}, User input {user_input}")
@@ -303,13 +464,18 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
             logger.error(f'Error al recuperar el documento mediante identificador de arxiv: {e}')
 
         system_prompt = f"""
-            Genera un resumen de cada apartado a partir del documento proporcionado, resaltando puntos claves y las conclusiones. Con formato Markdown.
+            Genera un resumen en profundidad del documento proporcionado, resaltando puntos claves y las conclusiones.
             **CONTESTA UNICAMENTE ESPAÑOL**  
             """
+        context.append({
+            "role": "assistant",
+            "content": f"\n\n Titulo del documento: {titulo_documento}\n\nDocumento proporcionado:\n\n{documento_completo[:10000]}"
+        })
+
+        #context_prompt += f"\n\n Titulo del documento: {titulo_documento}\n\nDocumento proporcionado:\n\n{documento_completo[:10000]}" # Esto se limita dada la limitacion computacional.
         
-        context_prompt += f"\n\n Titulo del documento: {titulo_documento}\n\nDocumento proporcionado:\n\n{documento_completo[:4000]}" # Esto se limita dada la limitacion computacional.
-        
-        return system_prompt, context_prompt, user_prompt
+        rag_flow = 'id_arxiv'
+        return system_prompt, context, rag_flow #user_prompt, rag_flow
 
     if deteccion_intencion(user_input) == 'consultar':
         temporalidad = deteccion_temporalidad(user_input)
@@ -321,22 +487,32 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
                 #user_input = translate_text(traductor_model, traductor_tokenizer, user_input)
                 consulta = temporalidad_a_SQL(conn,temporalidad)
                 # Apendizo al contexto
-                #context += f'\n{ahora} Usuario: {user_input}'
-                context_prompt += f"\nLervis: Conteo de publicaciones en la base de datos para {temporalidad[1]}: {consulta}"
+                context.append({
+                    "role": "assistant",
+                    "content": f"Conteo de publicaciones en la base de datos para {temporalidad[1]}: {consulta}"
+                })
+                
                 system_prompt = f"""
-                Eres un experto en publicaciones academicas de Arxiv en la categoria CS, Ciencias de la computacion.
-                Se conciso y claro en tus respuestas.
-                Tono profesional y amable.
-                Usa el contexto lo maximo posible para responder.
-                **CONTESTA UNICAMENTE ESPAÑOL**  
+                Contesta de forma concisa el conteo de publicaciones facilitado.
+                **CONTESTA UNICAMENTE ESPAÑOL**   
                 """
-                #{context}
-                return system_prompt, context_prompt, user_prompt
+                rag_flow = 'consultar_temp'
+
+                return system_prompt, context, rag_flow #user_prompt, rag_flow
             
             except Exception as e:
                 logger.error(f"En la lectura de temporalidad: {e} - temporalidad: {temporalidad}")
+                #system_prompt = "Responde brevemente y en español."
+                #return system_prompt, "Error al recuperar contexto.", "Disculpa, ¿podrías repetir la pregunta?"
                 system_prompt = "Responde brevemente y en español."
-                return system_prompt, "Error al recuperar contexto.", "Disculpa, ¿podrías repetir la pregunta?"
+    
+                context.append({
+                    "role": "assistant",
+                    "content": "Ha ocurrido un error al procesar la temporalidad. ¿Podrías repetir la pregunta?"
+                })
+                
+                rag_flow = 'consultar_temp'
+                return system_prompt, context, rag_flow
         
         # No Se detecta temporalidad en el input del usuario.
         else:
@@ -355,53 +531,101 @@ def RAG_chat_V2(urls_usados, user_input:str, context: str, logger, conn, embeddi
                     doc_formateado = formato_contexto_doc_recuperados(urls_usados, conn, df_temp, num_docs=2)
                     print(doc_formateado)
                     # Validacion de que no esta vacio
-                    context_prompt += f"\n\nDOCUMENTOS RECUPERADOS:\n\n{doc_formateado}"
+                    #context_prompt += f"\n\nDOCUMENTOS RECUPERADOS:\n\n{doc_formateado}"
+
+                    context.append({
+                        "role": "assistant",
+                        "content": f"\n\nDOCUMENTOS RECUPERADOS:\n\n{doc_formateado}"
+                    })
                     system_prompt = f"""
-                    **CONTESTA UNICAMENTE EN ESPAÑOL** 
-                    **Responde únicamente utilizando el contexto bajo 'DOCUMENTOS RECUPERADOS'.**
-                    **Respeta el formato pero traducelo al español**
-                    NO inventes publicaciones. Si no hay información suficiente, indícalo.
-                    
+                    Eres un modelo de lenguaje que debe generar respuestas **basadas únicamente** en el texto bajo la sección 'DOCUMENTOS RECUPERADOS', **respetando exactamente su formato**.
+
+                    Tareas a realizar:
+                    1. **Lee cuidadosamente cada documento o apartado bajo 'DOCUMENTOS RECUPERADOS'.**
+                    2. **Para cada documento o sección clave, genera un resumen breve y claro en formato Markdown.**
+                    3. El formato debe seguir esta estructura:
+
+                    ### Documento   
+                    - **Título:** [Si está presente; si no, indicar 'No disponible']
+                    - **Arxiv ID**: [Si está presente; si no, indicar 'No disponible']
+                    - **Autores:** [Si está presente; si no, indicar 'No disponible']  
+                    - **Fecha:** [Si está presente; si no, indicar 'No disponible']  
+                    - **URL de la publicacion**: [Si está presente; si no, indicar 'No disponible'] 
+                    - **Resumen:** [Escribe un resumen en 2-3 líneas sobre el contenido clave del documento]  
+
+                    4. Si algún campo está ausente en el documento original, **indícalo explícitamente** como 'No disponible'.
+                    5. No agregues información externa. Usa **exclusivamente** los 'DOCUMENTOS RECUPERADOS'.
+
+                    **CONTESTA ÚNICAMENTE EN ESPAÑOL**
                     """
-                    return system_prompt, context_prompt, user_prompt
+                    rag_flow = 'consultar_docs_chunk'
+                    return system_prompt, context, rag_flow #user_prompt, rag_flow
                 
                 elif docs_recuperados_resumen:
 
                     df_temp = reranking(docs_recuperados_resumen, embedding_disperso)
                     # El numero de documentos generados en el contexto es en funcion de num_docs
                     doc_formateado = formato_contexto_doc_recuperados(urls_usados, conn, df_temp, num_docs=2)
-                    #print(doc_formateado)
+                    print(doc_formateado)
                     # Validacion de que no esta vacio
-                    context_prompt += f"\n\nDOCUMENTOS RECUPERADOS:\n\n{doc_formateado}"
+                    #context_prompt += f"\n\nDOCUMENTOS RECUPERADOS:\n\n{doc_formateado}"
+                    context.append({
+                        "role": "assistant",
+                        "content": f"\n\nDOCUMENTOS RECUPERADOS:\n\n{doc_formateado}"
+                    })
                     system_prompt = f"""
-                    **CONTESTA UNICAMENTE EN ESPAÑOL** 
-                    **Responde únicamente utilizando el contexto bajo 'DOCUMENTOS RECUPERADOS'.**
-                    **Respeta el formato pero traducelo al español**
-                    NO inventes publicaciones. Si no hay información suficiente, indícalo.
+                    Eres un modelo de lenguaje que debe generar respuestas **basadas únicamente** en el texto bajo la sección 'DOCUMENTOS RECUPERADOS', **respetando exactamente su formato**.
+
+                    Tareas a realizar:
+                    1. **Lee cuidadosamente cada documento o apartado bajo 'DOCUMENTOS RECUPERADOS'.**
+                    2. **Para cada documento o sección clave, genera un resumen breve y claro en formato Markdown.**
+                    3. El formato debe seguir esta estructura:
+
+                    ### Documento   
+                    - **Título:** [Si está presente; si no, indicar 'No disponible']
+                    - **Arxiv ID**: [Si está presente; si no, indicar 'No disponible']
+                    - **Autores:** [Si está presente; si no, indicar 'No disponible']  
+                    - **Fecha:** [Si está presente; si no, indicar 'No disponible']  
+                    - **URL de la publicacion**: [Si está presente; si no, indicar 'No disponible'] 
+                    - **Resumen:** [Escribe un resumen en 2-3 líneas sobre el contenido clave del documento]   
+
+                    4. Si algún campo está ausente en el documento original, **indícalo explícitamente** como 'No disponible'.
+                    5. No agregues información externa. Usa **exclusivamente** los 'DOCUMENTOS RECUPERADOS'.
+
+                    **CONTESTA ÚNICAMENTE EN ESPAÑOL**
                     """
-                    #{context}
-                    return system_prompt, context_prompt, user_prompt
+                    rag_flow = 'consultar_docs_resumen'
+
+                    return system_prompt, context, rag_flow#user_prompt, rag_flow
                 else:
-                    system_prompt = """
-                    No se han encontrado resultados relevantes. Intenta ser más específico o proporciona un identificador arXiv si lo tienes.
-                    **CONTESTA UNICAMENTE ESPAÑOL**
-                    """
-                    return system_prompt, context_prompt, user_prompt
+                    system_prompt = """Te llamas Lervis. Eres un experto en publicaciones academicas de Arxiv en la categoria CS, Ciencias de la computacion.
+                    Indica al usuario que no se han encontrado documentos relacionados con la pregunta.
+                    **CONTESTA UNICAMENTE ESPAÑOL**"""
+                    rag_flow = 'recuperacion_vacia'
+                    return system_prompt, context, rag_flow #user_prompt, rag_flow
         
             except Exception as e:
                 logger.error(f"Error en la consulta de RAG_chat_V2: {e} - temporalidad: {temporalidad}")
+                #system_prompt = "Responde brevemente y en español."
+                #return system_prompt, "Error al recuperar contexto.", "Disculpa, ¿podrías repetir la pregunta?"
                 system_prompt = "Responde brevemente y en español."
-                return system_prompt, "Error al recuperar contexto.", "Disculpa, ¿podrías repetir la pregunta?"
+    
+                context.append({
+                    "role": "assistant",
+                    "content": "Ha ocurrido un error al procesar la temporalidad. ¿Podrías repetir la pregunta?"
+                })
+                
+                rag_flow = 'consultar'
+                return system_prompt, context, rag_flow
                 
 
     else: # Chatear con el usuario
         
         system_prompt = f"""  
-        Eres un experto en publicaciones academicas de Arxiv en la categoria CS, Ciencias de la computacion.
-        Se conciso y claro en tus respuestas.
-        Tono profesional y amable.
+        Te llamas Lervis. Eres un experto en publicaciones academicas de Arxiv en la categoria CS, Ciencias de la computacion.
         Usa el contexto lo maximo posible para responder.
         **CONTESTA UNICAMENTE ESPAÑOL**               
         """
-        return system_prompt, context_prompt, user_prompt
+        rag_flow = 'hablar'
+        return system_prompt, context, rag_flow #user_prompt, rag_flow
 

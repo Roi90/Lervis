@@ -1,0 +1,195 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="es" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Functions.Docling_OCR module &mdash; documentación de Lervis - 1.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=4936afed"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=f85f4cfb"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Índice" href="genindex.html" />
+    <link rel="search" title="Búsqueda" href="search.html" />
+    <link rel="next" title="Functions.Embeddings module" href="Embeddings.html" />
+    <link rel="prev" title="Functions.Chatbot_functions module" href="Chatbot_functions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Lervis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Buscar documentos" aria-label="Buscar documentos" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="API_metadata.html">Functions.API_metadata module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BBDD_functions.html">Functions.BBDD_functions module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Chatbot_functions.html">Functions.Chatbot_functions module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Functions.Docling_OCR module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Docling_OCR.Archivo_to_OCR"><code class="docutils literal notranslate"><span class="pre">Archivo_to_OCR()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Docling_OCR.Carga_Docling_OCR"><code class="docutils literal notranslate"><span class="pre">Carga_Docling_OCR()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Docling_OCR.transform_bytes_to_image"><code class="docutils literal notranslate"><span class="pre">transform_bytes_to_image()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Embeddings.html">Functions.Embeddings module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Enriquecimiento_documento.html">Functions.Enriquecimiento_documento module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Florence_2_anotacion.html">Functions.Florence_2_anotacion module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Loggers.html">Functions.Loggers module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MarianMT_traductor.html">Functions.MarianMT_traductor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PDF_descarga.html">Functions.PDF_descarga module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Lervis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Functions.Docling_OCR module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Docling_OCR.rst.txt" rel="nofollow"> Ver código fuente de la página</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-Functions.Docling_OCR">
+<span id="functions-docling-ocr-module"></span><h1>Functions.Docling_OCR module<a class="headerlink" href="#module-Functions.Docling_OCR" title="Link to this heading"></a></h1>
+<p>Este archivo contiene funciones para inyectar los PDF en el modelo Docling, para
+segmentar el PDF mediante el OCR.</p>
+<p>Autor: Roi Pereira Fiuza
+Fecha: 08/03/2024</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Docling_OCR.Archivo_to_OCR">
+<span class="sig-prename descclassname"><span class="pre">Functions.Docling_OCR.</span></span><span class="sig-name descname"><span class="pre">Archivo_to_OCR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_doc_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_converter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DocumentConverter</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dataset</span></span></span><a class="headerlink" href="#Functions.Docling_OCR.Archivo_to_OCR" title="Link to this definition"></a></dt>
+<dd><p>Procesa un documento PDF con OCR utilizando Docling y devuelve un Dataset estructurado con los resultados.</p>
+<p>Esta función convierte un documento PDF en texto segmentado página por página, incluyendo metadatos de la imagen,
+contenido textual y estructuras detectadas por el OCR.</p>
+<dl class="simple">
+<dt>Parámetros:</dt><dd><p>input_doc_path (str): Ruta al documento PDF que se desea procesar.
+doc_converter (DocumentConverter): Objeto configurado de Docling para convertir documentos PDF mediante OCR.</p>
+</dd>
+<dt>Retorna:</dt><dd><dl class="simple">
+<dt>Dataset: Objeto Dataset que contiene la información estructurada del documento,</dt><dd><p>incluyendo texto, metadatos e imágenes por página.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre algún error durante el procesamiento del documento.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Docling_OCR.Carga_Docling_OCR">
+<span class="sig-prename descclassname"><span class="pre">Functions.Docling_OCR.</span></span><span class="sig-name descname"><span class="pre">Carga_Docling_OCR</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Docling_OCR.Carga_Docling_OCR" title="Link to this definition"></a></dt>
+<dd><p>Configura y carga un pipeline OCR para la conversión de documentos PDF usando Docling.</p>
+<p>Esta función inicializa un objeto DocumentConverter que está configurado para:
+- Procesar archivos en formato PDF.
+- Generar imágenes de las páginas procesadas.
+- Mantener la escala original de las imágenes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Objeto configurado para realizar OCR sobre documentos PDF.</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>DocumentConverter</p>
+</dd>
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la configuración del pipeline OCR.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Docling_OCR.transform_bytes_to_image">
+<span class="sig-prename descclassname"><span class="pre">Functions.Docling_OCR.</span></span><span class="sig-name descname"><span class="pre">transform_bytes_to_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">examples</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Docling_OCR.transform_bytes_to_image" title="Link to this definition"></a></dt>
+<dd><p>Convierte una imagen representada en bytes en un objeto de imagen RGB de PIL.</p>
+<p>Esta función toma un diccionario que contiene las dimensiones y los datos en bytes de una imagen
+y los transforma en un objeto de imagen utilizando la librería PIL (Python Imaging Library).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>examples</strong> (<em>dict</em>) – Diccionario que debe contener las siguientes claves:
+- image.width (int): Ancho de la imagen.
+- image.height (int): Alto de la imagen.
+- image.bytes (bytes): Contenido de la imagen en formato de bytes en modo RGB.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>El mismo diccionario con la clave adicional image que contiene un objeto PIL.Image.
+Devuelve None si ocurre un error durante la conversión.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict o None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Pie de página">
+        <a href="Chatbot_functions.html" class="btn btn-neutral float-left" title="Functions.Chatbot_functions module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Anterior</a>
+        <a href="Embeddings.html" class="btn btn-neutral float-right" title="Functions.Embeddings module" accesskey="n" rel="next">Siguiente <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Derechos de autor 2025, Roi Pereira Fiuza.</p>
+  </div>
+
+  Compilado con <a href="https://www.sphinx-doc.org/">Sphinx</a> usando un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">tema</a>
+    proporcionado por <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

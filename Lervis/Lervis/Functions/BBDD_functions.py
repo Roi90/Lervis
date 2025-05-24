@@ -4,7 +4,8 @@ Proporciona métodos para crear un motor de conexión.
 
 Autor: Roi Pereira Fiuza
 """
-import re
+import json
+import os
 from Static_data import categorias_arxiv
 import pandas as pd
 import numpy as np
@@ -14,19 +15,29 @@ from psycopg.rows import dict_row
 from Functions.Loggers import crear_logger
 
 logger = crear_logger('funciones_BDDD', 'funciones_BDDD.log')
-# ---------------------------TO DO: Crear un archivo con las variables para seguridad
+
+# Extraccion de user y pass  
+with open(r'C:\Users\Usuario\OneDrive\UOC\TFG\Lervis\Lervis\passwords.json', 'r') as e:
+    data = json.load(e)
+user = data['user']
+password = data['password']
 
 def conn_bbdd():
     """
-    Crea y devuelve un motor de conexión a la base de datos PostgreSQL.
-    La función utiliza una URL de conexión predefinida para conectarse a una base de datos PostgreSQL
-    y crea un motor de conexión utilizando SQLAlchemy.
+    Establece una conexión con una base de datos PostgreSQL y devuelve el objeto de conexión.
+
+    Utiliza psycopg para crear una conexión a la base de datos definida por DATABASE_URL,
+    aplicando row_factory=dict_row para obtener los resultados como diccionarios.
+
     Returns:
-        engine (sqlalchemy.engine.base.Engine): Motor de conexión a la base de datos.
+        psycopg.Connection: Objeto de conexión activo a la base de datos PostgreSQL.
+
+    Raises:
+        Exception: Si ocurre un error durante la conexión, se registra y se lanza de nuevo.
     """
     # ---------- GUARDAR SECRETOS EN UN ARHCIVO EXTERNO A ESTE ENTORNO
     # URL de conexión
-    DATABASE_URL = "postgresql://postgres:Quiksilver90!@localhost:5432/Lervis"
+    DATABASE_URL = f"postgresql://{user}:{password}@localhost:5432/Lervis"
     # Crear motor de conexión
     #engine = create_engine(DATABASE_URL)
     try:
@@ -41,11 +52,19 @@ def conn_bbdd():
 # --------------------------- Carga de datoss en la BBDD
 def carga_dimension_categorias(conn):
     """
-    Carga la dimensión de categorías en la base de datos usando psycopg.
+    Inserta las categorías de arXiv en la tabla categoria de la base de datos y retorna un diccionario de mapeo.
+
+    Esta función carga los datos desde el diccionario categorias_arxiv a la base de datos PostgreSQL,
+    y luego construye un diccionario que mapea cada código de categoría a su ID correspondiente en la tabla.
+
     Args:
-        conn (psycopg.Connection): Conexión a la base de datos.
+        conn (psycopg.Connection): Objeto de conexión a la base de datos PostgreSQL.
+
     Returns:
-        dict: Diccionario con los códigos de categoría como claves y los IDs de la base de datos como valores.
+        dict: Diccionario donde las claves son códigos de categoría (str) y los valores son los IDs (int) en la tabla categoria.
+
+    Raises:
+        Exception: Si ocurre un error al recuperar los datos tras la inserción, la excepción se lanza nuevamente.
     """
     categoria_dict = {}
     
@@ -80,6 +99,21 @@ def carga_dimension_categorias(conn):
     return categoria_dict
 
 def dict_catetorias(conn):
+    """
+    Recupera un diccionario que mapea códigos de categoría a sus respectivos IDs desde la base de datos.
+
+    Esta función consulta la tabla categoria de la base de datos y construye un diccionario donde 
+    cada clave es un código de categoría y su valor es el ID correspondiente.
+
+    Args:
+        conn (psycopg.Connection): Objeto de conexión a la base de datos PostgreSQL.
+
+    Returns:
+        dict: Diccionario con claves como códigos de categoría (str) y valores como IDs (int).
+
+    Raises:
+        Exception: Si ocurre un error durante la consulta SQL.
+    """
     categoria_dict = {}
     try:
         # Extracción de datos para generar el diccionario
@@ -94,14 +128,25 @@ def dict_catetorias(conn):
 
 def carga_hechos_publicaciones(conn, df: pd.DataFrame):
     """
-    Carga los hechos de publicaciones en la base de datos.
-    Esta función toma un DataFrame `df` que contiene datos de publicaciones y los inserta en una tabla llamada 'publicaciones'
-    en la base de datos especificada por el parámetro `engine`.
+    Inserta los datos de publicaciones en la base de datos y devuelve un diccionario de identificadores.
+
+    Esta función toma un DataFrame que contiene información sobre publicaciones científicas extraídas de arXiv
+    y las inserta en la tabla publicaciones de la base de datos. 
+    
+    Posteriormente, recupera y devuelve un diccionario que relaciona cada identificador de arXiv con su ID asignado en la base de datos.
+
     Args:
-        engine (sqlalchemy.engine.Engine): Conexión a la base de datos donde se insertarán los datos.
-        df (pd.DataFrame): DataFrame que contiene los datos de publicaciones a insertar.
+        conn (psycopg.Connection): Objeto de conexión a la base de datos PostgreSQL.
+        df (DataFrame): DataFrame que contiene los datos de publicaciones a insertar. Debe contener las columnas:
+        'titulo', 'autores', 'fecha_publicacion', 'categoria_principal',
+        'categorias_lista', 'url_pdf', 'identificador_arxiv'.
+
     Returns:
-        dict: Diccionario con los identificadores de arXiv como claves y los IDs de la base de datos como valores.
+        dict: Diccionario donde las claves son identificadores de arXiv (str) y los valores son IDs (int)
+              generados en la tabla 'publicaciones'.
+
+    Raises:
+        Exception: Si ocurre un error durante la inserción o recuperación de datos en la base de datos.
     """
     publicaciones_dict = {}
 
@@ -136,15 +181,22 @@ def carga_hechos_publicaciones(conn, df: pd.DataFrame):
 
 def carga_hechos_chunks_embeddings(df: pd.DataFrame, engine):
     """
-    Inserta los datos de embeddings en la base de datos utilizando SQLAlchemy y pandas.
-    Se usa SQLAlchemy, debido a complicaciones en la insercion para el HSTORE.
-    
+    Inserta los datos de embeddings por chunks en la base de datos.
+
+    Esta función toma un DataFrame que contiene los embeddings generados por fragmento (chunk)
+    y los inserta en la tabla embeddings_chunks. Se usa el DataFrame, ya que facilita la insercion
+    de los vetores dispersos HSTORE.
+
     Args:
-        engine (sqlalchemy.engine.Engine): Conexión a la base de datos.
-        datos_embeddings_lst (list): Lista de diccionarios con los datos de embeddings.
-        
+        df (DataFrame): DataFrame con los datos de embeddings a insertar. Debe contener todas las columnas
+        requeridas por la tabla 'embeddings_chunks'.
+        engine (sqlalchemy.engine.Engine): Motor de conexión a la base de datos PostgreSQL.
+
     Returns:
         None
+
+    Raises:
+        Exception: Si ocurre un error durante la inserción de los datos.
     """ 
     try:
         # Insertar el DataFrame en la base de datos, tabla 'embeddings'
@@ -155,15 +207,22 @@ def carga_hechos_chunks_embeddings(df: pd.DataFrame, engine):
 
 def carga_hechos_resumen_embeddings(df: pd.DataFrame, engine):
     """
-    Inserta los datos de embeddings en la base de datos utilizando SQLAlchemy y pandas.
-    Se usa SQLAlchemy, debido a complicaciones en la insercion para el HSTORE.
-    
+    Inserta los datos de embeddings por resumen en la base de datos.
+
+    Esta función toma un DataFrame que contiene los embeddings generados a partir de resúmenes
+    y los inserta en la tabla embeddings_resumen. Se usa el DataFrame, ya que facilita la inserción
+    de los vectores dispersos HSTORE.
+
     Args:
-        engine (sqlalchemy.engine.Engine): Conexión a la base de datos.
-        datos_embeddings_lst (list): Lista de diccionarios con los datos de embeddings.
-        
+        df (DataFrame): DataFrame con los datos de embeddings a insertar. Debe contener todas las columnas
+        requeridas por la tabla 'embeddings_resumen'.
+        engine (sqlalchemy.engine.Engine): Motor de conexión a la base de datos PostgreSQL.
+
     Returns:
         None
+
+    Raises:
+        Exception: Si ocurre un error durante la inserción de los datos.
     """
     try:
         # Insertar el DataFrame en la base de datos, tabla 'embeddings'
@@ -172,6 +231,23 @@ def carga_hechos_resumen_embeddings(df: pd.DataFrame, engine):
         logger.error(f"Error al insertar datos en la tabla 'embeddings_resumen': {e} - id {df['id_publicaciones']}")
 
 def carga_doc_enriquecido(documento_enriquecido, identificador_arxiv,  conn):
+    """
+    Actualiza el documento enriquecido en la base de datos.
+
+    Esta función actualiza el campo documento_completo de la tabla publicaciones para el 
+    registro correspondiente al identificador de arXiv proporcionado.
+
+    Args:
+        documento_enriquecido (str): Documento enriquecido a insertar en la base de datos.
+        identificador_arxiv (str): Identificador único de la publicación en arXiv.
+        conn (psycopg.Connection): Conexión activa a la base de datos PostgreSQL.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: Si ocurre un error durante la actualización de los datos.
+    """
     try:
         with conn.cursor() as cur:
             cur.execute("""UPDATE publicaciones
@@ -184,15 +260,26 @@ def carga_doc_enriquecido(documento_enriquecido, identificador_arxiv,  conn):
 
 def normalizador_id_categoria_BBDD(df: pd.DataFrame, diccionario: dict):
     """
-    Normaliza los IDs de las categorías en el DataFrame utilizando un diccionario de mapeo.
-    Este paso se realiza para la normalizacion de las dimensiones en la tabla de hechos publicaciones.
+    Normaliza los IDs de las categorías en el DataFrame usando un diccionario de mapeo.
+
+    Esta función transforma los valores de la columna categoria_principal del DataFrame
+    utilizando un diccionario que relaciona códigos de categoría con sus correspondientes IDs
+    en la base de datos. 
+    
+    Se utiliza para asegurar la integridad referencial al cargar datos en la tabla de hechos 
+    publicaciones.
 
     Args:
-        df (pd.DataFrame): DataFrame que contiene los datos a normalizar.
-        diccionario (dict): Diccionario que mapea códigos de categorías a IDs de la base de datos.
+        df (DataFrame): DataFrame con las publicaciones que contienen códigos de categorías.
+        diccionario (dict): Diccionario que mapea códigos de categoría (str) a IDs de la BBDD (int).
 
     Returns:
-        pd.DataFrame: DataFrame con los IDs de categorías normalizados.
+        DataFrame: DataFrame con la columna categoria_principal normalizada por IDs,
+        y limitado a las columnas relevantes para su posterior inserción.
+
+    Raises:
+        ValueError: Si el DataFrame no contiene todas las columnas esperadas.
+        Exception: Si ocurre un error durante la normalización de la columna.
     """
 
     columnas_esperadas = ['titulo', 'autores','fecha_publicacion','resumen',
@@ -214,15 +301,23 @@ def normalizador_id_categoria_BBDD(df: pd.DataFrame, diccionario: dict):
 
 def normalizador_id_embeddings_BBDD(df: pd.DataFrame, diccionario: dict):
     """
-    Normaliza los IDs de las categorías en el DataFrame utilizando un diccionario de mapeo.
-    Este paso se realiza para la normalizacion de las dimensiones en la tabla de hechos publicaciones.
+    Normaliza los IDs de publicaciones en el DataFrame usando un diccionario de mapeo.
+
+    Esta función reemplaza los valores en la columna id_publicaciones por los correspondientes IDs
+    obtenidos de la base de datos. Se utiliza para asegurar que los embeddings se asocien correctamente
+    con sus registros en la tabla de hechos de publicaciones.
 
     Args:
-        df (pd.DataFrame): DataFrame que contiene los datos a normalizar.
-        diccionario (dict): Diccionario que mapea códigos de categorías a IDs de la base de datos.
+        df (DataFrame): DataFrame con los datos de embeddings a normalizar. Debe contener las columnas 
+        esperadas para chunks y resúmenes.
+        diccionario (dict): Diccionario que mapea identificadores originales a IDs de la BBDD.
 
     Returns:
-        pd.DataFrame: DataFrame con los IDs de categorías normalizados.
+        DataFrame: DataFrame con la columna id_publicaciones normalizada por IDs.
+
+    Raises:
+        ValueError: Si el DataFrame no contiene todas las columnas esperadas.
+        Exception: Si ocurre un error durante la normalización de la columna.
     """
     columnas_esperadas = ['id_publicaciones', 'contenido','contenido_emb_dense',
                           'contenido_emb_sparse', 'resumen', 'resumen_emb_dense', 'resumen_emb_sparse']
@@ -248,16 +343,24 @@ def normalizador_id_embeddings_BBDD(df: pd.DataFrame, diccionario: dict):
 
 def similitud_coseno_chunks(embedding_denso: np.array, conn, umbral_distancia, n_docs)-> dict:
     """
-    Calcula la similitud del coseno entre un vector y los vectores almacenados en la base de datos.
-    Esta función toma un vector y calcula la similitud del coseno con los vectores de contenido y resumen
-    de los documentos almacenados en la base de datos.
+    Recupera los fragmentos (chunks) más similares a un vector de embedding denso usando similitud del coseno.
+
+    Esta función consulta la base de datos para encontrar los fragmentos de texto (chunks) cuyo vector de embedding 
+    denso tiene mayor similitud con respecto a un vector de entrada. 
 
     Args:
-        embedding_denso (np.array): Vector de embedding a comparar.
-        conn (psycopg.Connection): Conexión a la base de datos.
+        embedding_denso (np.array): Vector de embedding denso a comparar.
+        conn (psycopg.Connection): Conexión activa a la base de datos PostgreSQL.
+        umbral_distancia (float): Umbral máximo de distancia del coseno permitido para considerar un chunk como relevante.
+        n_docs (int): Número máximo de documentos a recuperar.
 
     Returns:
-        list: Lista de documentos recuperados con sus similitudes.
+        list: Lista de diccionarios con los chunks recuperados que cumplen con el umbral de similitud,
+        ordenados de mayor a menor similitud. Cada entrada incluye id, id_publicaciones, chunk_emb_sparse,
+        chunk y la similitud_contenido.
+
+    Raises:
+        Exception: Si ocurre un error durante la ejecución de la consulta SQL.
     """
 
     embedding = embedding_denso.tolist()
@@ -283,19 +386,24 @@ def similitud_coseno_chunks(embedding_denso: np.array, conn, umbral_distancia, n
 
 def similitud_coseno_resumen(embedding_denso: np.array, conn, umbral_distancia, n_docs)-> dict:
     """
-    Calcula la similitud del coseno entre un vector y los embeddings de resúmenes almacenados en la base de datos.
+    Recupera los resúmenes más similares a un vector de embedding denso usando similitud del coseno.
 
-    Esta función consulta la tabla `embeddings_resumen` y recupera los documentos cuyo embedding de resumen
-    sea más similar (menor distancia del coseno) al embedding proporcionado.
+    Esta función consulta la tabla embeddings_resumen para encontrar los resúmenes de documentos 
+    cuyo vector de embedding denso presenta la menor distancia del coseno respecto al vector de entrada.
 
     Args:
-        embedding_denso (np.array): Vector de embedding a comparar.
-        conn (psycopg.Connection): Conexión a la base de datos.
-        umbral_distancia (float): Valor máximo de distancia del coseno permitida.
-        n_docs (int): Número máximo de documentos a recuperar.
+        embedding_denso (np.array): Vector de embedding denso del resumen de entrada.
+        conn (psycopg.Connection): Conexión activa a la base de datos PostgreSQL.
+        umbral_distancia (float): Umbral máximo de distancia coseno para considerar un resumen como relevante.
+        n_docs (int): Número máximo de resúmenes/documentos a recuperar.
 
     Returns:
-        list: Lista de tuplas con los documentos recuperados y su distancia.
+        list: Lista de diccionarios con los chunks recuperados que cumplen con el umbral de similitud,
+        ordenados de mayor a menor similitud. Cada entrada incluye id, id_publicaciones, chunk_emb_sparse,
+        chunk y la similitud_contenido.
+
+    Raises:
+        Exception: Si ocurre un error durante la consulta a la base de datos.
     """
 
     embedding = embedding_denso.tolist()
@@ -320,13 +428,19 @@ def similitud_coseno_resumen(embedding_denso: np.array, conn, umbral_distancia, 
     
 def hstore_a_dict(hstore_str: str) -> dict:
     """
-    Convierte una cadena de texto en formato HSTORE a un diccionario de Python.
-    
+    Convierte una cadena en formato HSTORE a un diccionario.
+
+    Esta función toma una cadena con formato HSTORE y la convierte a un diccionario con claves 
+    tipo str y valores tipo float.
+
     Args:
-        hstore_str (str): Cadena HSTORE a convertir.
-        
+        hstore_str (str): String en formato HSTORE, con pares clave/valor separados por '=>'.
+
     Returns:
-        dict: Diccionario resultante.
+        dict: Diccionario Python con los valores convertidos. Devuelve un diccionario vacío si falla la conversión.
+
+    Raises:
+        Exception: Solo se registra el error. No se lanza, para evitar la interrupción del flujo.
     """
     try:
         hstore_dict = dict(
@@ -342,13 +456,22 @@ def hstore_a_dict(hstore_str: str) -> dict:
 
 def reranking(documentos_recuperados, embedding_disperso):
     """
-    Reordena los documentos recuperados basándose en la similitud de vocabulario y contenido.
-    
+    Reordena documentos basándose en similitud de contenido y vocabulario.
+
+    Esta función transforma los vectores dispersos HSTORE de los documentos recuperados a diccionarios,
+    calcula la similitud de vocabulario como la intersección de claves entre los embeddings,
+    y luego ordena los documentos por similitud de contenido y vocabulario.
+
     Args:
-        documentos_recuperados (lista de diccionarios): Lista de documentos recuperados con sus similitudes.
-        
+        documentos_recuperados (list of dict): Lista de documentos recuperados desde la base de datos.
+        embedding_disperso (dict): Embedding disperso del prompt de búsqueda.
+
     Returns:
-        pd.DataFrame: DataFrame ordenado con los documentos re-rankeados.
+        DataFrame: DataFrame ordenado, primero por similitud de contenido (ascendente)
+        y luego por similitud de vocabulario (descendente).
+
+    Raises:
+        Exception: Se registra cualquier error encontrado durante el reordenamiento.
     """
     try:
         df_temp = pd.DataFrame(documentos_recuperados)
@@ -365,6 +488,27 @@ def reranking(documentos_recuperados, embedding_disperso):
         return df_temp
 
 def formatear_metadata(doc):
+
+    """
+    Formatea los metadatos de una publicación científica en un bloque de texto legible.
+
+    Esta función toma un diccionario con información de una publicación de arXiv y devuelve
+    una cadena formateada en estilo Markdown con título, ID, autores, fecha, URL y resumen.
+
+    Args:
+        doc (dict): Diccionario con los campos necesarios, incluyendo:
+            - titulo (str)
+            - identificador_arxiv (str)
+            - categoria (str)
+            - autores (str)
+            - fecha_publicacion (str)
+            - url_pdf (str)
+            - resumen (str)
+
+    Returns:
+        str: Texto formateado en estilo Markdown, orientado para la lectura del LLM.
+    """
+
     return (
         "\n**----------------------------**\n"
         f"**Titulo**: {doc['titulo']}\n"
@@ -377,78 +521,102 @@ def formatear_metadata(doc):
         "**----------------------------**\n"
     )
 
-def formatear_chunk(chunk):
-    return (
-        "\n**----Fragmento semantico Inicio----**\n"
-        f"{chunk}\n"
-        "**----Fragmento semantico Fin----**\n"
-    )
 
 def formato_contexto_doc_recuperados(urls_usados, conn, df: pd.DataFrame, num_docs: int = 2) -> str:
+    """
+    Esta funcion formatea los documentos recuperados de la base de datos en la recuperacion de
+    documentos.
 
+    Esta función toma los identificadores de los documentos de un DataFrame,
+    recupera sus metadatos y resúmenes desde la base de datos, y genera un texto formateado
+    para ser usado como contexto en el LLM.
+
+    Se evita la duplicación utilizando el conjunto urls_usados.
+
+    Args:
+        urls_usados (set): Conjunto que almacena las URLs ya formateadas para evitar duplicaciones.
+        conn (psycopg.Connection): Conexión activa a la base de datos PostgreSQL.
+        df (DataFrame): DataFrame ordenado con los documentos recuperados y sus puntuaciones.
+        num_docs (int): Número de documentos a incluir en el contexto. Por defecto 2.
+
+    Returns:
+        str: Texto formateado con los metadatos de los documentos seleccionados. Si ocurre un error,
+             se devuelve una cadena vacía.
+    """
 
     documentos_formateados = ''
 
-    if num_docs > len(df):
-        print('El número de documentos solicitados es mayor que el número de documentos recuperados')
-    else:
-        try:
-            # Subconjunto de documentos recuperados
-            df_top_docs = df.head(num_docs)
-            # Extraer los IDs de los documentos
-            id_publicaciones = list(set(df_top_docs['id_publicaciones']))
-            # Formateo para correcta ejecucion de cur.execute
-            params = tuple(id_publicaciones)
-            # Formateo para poder introducir una tupla (%s, %s, %s...)
-            placeholders_id_publicaciones = sql.SQL(', ').join([sql.Placeholder() for _ in id_publicaciones])
-            
-            with conn.cursor() as cur:
-                query = sql.SQL("""SELECT 
-                            titulo,
-                            CAT.categoria,
-                            autores,
-                            fecha_publicacion,
-                            url_pdf,
-                            identificador_arxiv,
-                            ER.resumen
-                            FROM publicaciones
-                            LEFT JOIN categoria as CAT
-                                ON publicaciones.categoria_principal = CAT.id
-                            LEFT JOIN embeddings_resumen as ER
-                                ON publicaciones.id = ER.id_publicaciones
-                            WHERE publicaciones.id in ({})""").format(placeholders_id_publicaciones)
-                cur.execute(query, params)
-                # Recuperar los resultados (Lista de diccionarios)
-                documentos_recuperados = cur.fetchall()
-            # Formateo e insercion de los chunks y metadatos para el contexto
-            docs_insertados = 0
-            for doc in documentos_recuperados:
-                # Se usa la secuencia del DF que esta ordenado
-                url   = doc['url_pdf'].strip()
+    try:
+        # Subconjunto de documentos recuperados
+        df_top_docs = df.head(num_docs)
+        # Extraer los IDs de los documentos
+        id_publicaciones = list(set(df_top_docs['id_publicaciones']))
+        # Formateo para correcta ejecucion de cur.execute
+        params = tuple(id_publicaciones)
+        # Formateo para poder introducir una tupla (%s, %s, %s...)
+        placeholders_id_publicaciones = sql.SQL(', ').join([sql.Placeholder() for _ in id_publicaciones])
+        
+        with conn.cursor() as cur:
+            query = sql.SQL("""SELECT 
+                        titulo,
+                        CAT.categoria,
+                        autores,
+                        fecha_publicacion,
+                        url_pdf,
+                        identificador_arxiv,
+                        ER.resumen
+                        FROM publicaciones
+                        LEFT JOIN categoria as CAT
+                            ON publicaciones.categoria_principal = CAT.id
+                        LEFT JOIN embeddings_resumen as ER
+                            ON publicaciones.id = ER.id_publicaciones
+                        WHERE publicaciones.id in ({})""").format(placeholders_id_publicaciones)
+            cur.execute(query, params)
+            # Recuperar los resultados (Lista de diccionarios)
+            documentos_recuperados = cur.fetchall()
+        # Formateo e insercion de los chunks y metadatos para el contexto
+        docs_insertados = 0
+        for doc in documentos_recuperados:
+            # Se usa la secuencia del DF que esta ordenado
+            url   = doc['url_pdf'].strip()
 
-                # Compruebo que no se ha insertado para evitar duplicacion de metadatos.
-                if url not in urls_usados:
-                    if docs_insertados == num_docs:
-                        break
-                        
-                    else:
-                        # Nuevo documento: metadata
-                        urls_usados.add(url)
-                        documentos_formateados += formatear_metadata(doc)
-                        docs_insertados += 1
+            # Compruebo que no se ha insertado para evitar duplicacion de metadatos.
+            if url not in urls_usados:
+                if docs_insertados == num_docs:
+                    break
+                    
+                else:
+                    # Nuevo documento: metadata
+                    urls_usados.add(url)
+                    documentos_formateados += formatear_metadata(doc)
+                    docs_insertados += 1
 
-            return documentos_formateados
-        except Exception as e:
-            logger.error(f"Error al formatear los documentos recuperados: {e}")
-            return ""
+        return documentos_formateados
+    except Exception as e:
+        logger.error(f"Error al formatear los documentos recuperados: {e}")
+        return ""
 
 def temporalidad_a_SQL(conn, temporalidad: tuple):
     """
-    Convierte la temporalidad extraida del input del usuario a una consulta SQL.
+    Genera y ejecuta una consulta SQL para contar publicaciones según una condición temporal.
+
+    Esta función interpreta la estructura de la temporalidad extraída del input del usuario
+    y construye dinámicamente una consulta SQL para recuperar el número de publicaciones
+    en la base de datos que cumplen con las condiciones de tiempo (mes, año o ambas).
+
     Args:
-        temporalidad (tuple): Tuple que contiene la temporalidad extraida del input del usuario. (Ej: ('Tipo de temporalidad', diccionario con los valores, user_input))
+        conn (psycopg.Connection): Conexión activa a la base de datos PostgreSQL.
+        temporalidad (tuple): Tupla con tres elementos:
+            - tipo (str): Puede ser Combinada, Mes, Anio o EXP.
+            - valores (dict o list o int): Información temporal según el tipo.
+            - texto_usuario (str): Texto original proporcionado por el usuario.
+
     Returns:
-        str: Consulta SQL generada a partir de la temporalidad.
+        int or None: Número de publicaciones que cumplen con la condición temporal,
+        o None si ocurre un error en la consulta.
+
+    Raises:
+        No se lanzan errores. Se registran mediante logger y se devuelve `None` en caso de fallo.
     """
 
     if temporalidad is not None:
@@ -565,14 +733,22 @@ def temporalidad_a_SQL(conn, temporalidad: tuple):
 
 def recuperar_documento_por_arxiv_id(arxiv_id: str, conn):
     """
-    Recupera el texto completo de un documento dado un identificador de arXiv.
+    Recupera el título y el texto completo del documento enriquecido desde la base de datos utilizando su identificador de arXiv.
+
+    Esta función consulta la base de datos para encontrar un documento cuyo identificador coincida con el valor
+    proporcionado.
 
     Args:
-        arxiv_id (str): Identificador de arXiv.
-        conn: Conexión activa a la base de datos.
+        arxiv_id (str): Identificador único del documento en arXiv.
+        conn (psycopg.Connection): Conexión activa a la base de datos PostgreSQL.
 
     Returns:
-        str | None: Documento si se encuentra, o None.
+        tuple:
+            - str: Título del documento.
+            - str: Texto completo del documento si se encuentra, o un mensaje indicando que no existe.
+
+    Raises:
+        No lanza excepciones. Si ocurre un error, lo registra en el logger y devuelve None.
     """
     try:
         with conn.cursor() as cur:
@@ -586,9 +762,8 @@ def recuperar_documento_por_arxiv_id(arxiv_id: str, conn):
             if row:
                 return row['titulo'] ,row['documento_completo']
             else:
-                f'No existe ese id {arxiv_id} en la base de datos'
+                return '',f'No existe ese id {arxiv_id} en la base de datos'
     except Exception as e:
         logger.error(f"Error al recuperar documento por arXiv: {e}")
         return None
     
-

@@ -1,0 +1,338 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="es" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Functions.Chatbot_functions module &mdash; documentación de Lervis - 1.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=4936afed"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=f85f4cfb"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Índice" href="genindex.html" />
+    <link rel="search" title="Búsqueda" href="search.html" />
+    <link rel="next" title="Functions.Docling_OCR module" href="Docling_OCR.html" />
+    <link rel="prev" title="Functions.BBDD_functions module" href="BBDD_functions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Lervis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Buscar documentos" aria-label="Buscar documentos" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="API_metadata.html">Functions.API_metadata module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BBDD_functions.html">Functions.BBDD_functions module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Functions.Chatbot_functions module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Chatbot_functions.Llama3_1_API"><code class="docutils literal notranslate"><span class="pre">Llama3_1_API()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Chatbot_functions.RAG_chat_V2"><code class="docutils literal notranslate"><span class="pre">RAG_chat_V2()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Chatbot_functions.actualizacion_informacion_inicial"><code class="docutils literal notranslate"><span class="pre">actualizacion_informacion_inicial()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Chatbot_functions.deteccion_intencion"><code class="docutils literal notranslate"><span class="pre">deteccion_intencion()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Chatbot_functions.deteccion_temporalidad"><code class="docutils literal notranslate"><span class="pre">deteccion_temporalidad()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Chatbot_functions.detectar_identificador_arxiv"><code class="docutils literal notranslate"><span class="pre">detectar_identificador_arxiv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Chatbot_functions.eliminacion_acentos"><code class="docutils literal notranslate"><span class="pre">eliminacion_acentos()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.Chatbot_functions.limitador_contexto"><code class="docutils literal notranslate"><span class="pre">limitador_contexto()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Docling_OCR.html">Functions.Docling_OCR module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Embeddings.html">Functions.Embeddings module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Enriquecimiento_documento.html">Functions.Enriquecimiento_documento module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Florence_2_anotacion.html">Functions.Florence_2_anotacion module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Loggers.html">Functions.Loggers module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MarianMT_traductor.html">Functions.MarianMT_traductor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PDF_descarga.html">Functions.PDF_descarga module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Lervis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Functions.Chatbot_functions module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Chatbot_functions.rst.txt" rel="nofollow"> Ver código fuente de la página</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-Functions.Chatbot_functions">
+<span id="functions-chatbot-functions-module"></span><h1>Functions.Chatbot_functions module<a class="headerlink" href="#module-Functions.Chatbot_functions" title="Link to this heading"></a></h1>
+<p>Este archivo contiene el desarrollo del Chatbot con Llama 3.1 mediante Ollama.</p>
+<p>Autor: Roi Pereira Fiuza</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Chatbot_functions.Llama3_1_API">
+<span class="sig-prename descclassname"><span class="pre">Functions.Chatbot_functions.</span></span><span class="sig-name descname"><span class="pre">Llama3_1_API</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">system_prompt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_prompt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rag_flow</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Chatbot_functions.Llama3_1_API" title="Link to this definition"></a></dt>
+<dd><p>Genera una respuesta usando el LLM , ajustando los parámetros según el flujo RAG detectado.</p>
+<p>Esta función configura dinámicamente los parámetros de temperatura, número de tokens de contexto
+y tokens de predicción en función del tipo de flujo (rag_flow) detectado.</p>
+<p>Luego, realiza una llamada  a la API local de Ollama, del LLM en modo streaming.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>system_prompt</strong> (<em>str</em>) – Instrucción inicial del sistema que establece el comportamiento del modelo.</p></li>
+<li><p><strong>context</strong> (<em>list</em>) – Lista de mensajes previos como historial de conversación.</p></li>
+<li><p><strong>user_prompt</strong> (<em>str</em>) – Mensaje actual del usuario.</p></li>
+<li><p><strong>rag_flow</strong> (<em>str</em>) – Tipo de flujo de generación. Puede ser:
+- id_arxiv: Resumen detallado de documentos completos.
+- consultar_temp: Consulta basada en temporalidad.
+- consultar_docs_chunk: Recuperación basada en chunks.
+- consultar_docs_resumen: Recuperación basada en resúmenes.
+- hablar: Interacción generica de conversacion.
+- recuperacion_vacia: Cuando no hay documentos encontrados en base a
+la similitud.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Campos<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>str</em> – Fragmentos de texto generados por el modelo en tiempo real (streaming).</p>
+</dd>
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si se produce un error durante la llamada al modelo.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Chatbot_functions.RAG_chat_V2">
+<span class="sig-prename descclassname"><span class="pre">Functions.Chatbot_functions.</span></span><span class="sig-name descname"><span class="pre">RAG_chat_V2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">urls_usados</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">traductor_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">traductor_tokenizer</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Chatbot_functions.RAG_chat_V2" title="Link to this definition"></a></dt>
+<dd><p>Procesa una entrada de usuario utilizando un flujo RAG para generar una respuesta
+personalizada basada en distintos escenarios: identificador de arXiv, consulta con temporalidad, recuperación de
+documentos por embeddings, o conversación general.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>urls_usados</strong> (<em>set</em>) – Conjunto de URL ya utilizadas en el contexto para evitar duplicación de metadatos.</p></li>
+<li><p><strong>user_input</strong> (<em>str</em>) – Entrada textual del usuario.</p></li>
+<li><p><strong>context</strong> (<em>list</em>) – Lista de mensajes previos en el chat, que sirven como contexto.</p></li>
+<li><p><strong>logger</strong> – Logger para registrar eventos y errores.</p></li>
+<li><p><strong>conn</strong> – Conexión a la base de datos PostgreSQL.</p></li>
+<li><p><strong>embedding_model</strong> – Modelo de embeddings.</p></li>
+<li><p><strong>traductor_model</strong> – Modelo de traducción.</p></li>
+<li><p><strong>traductor_tokenizer</strong> – Tokenizador del modelo de traducción.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>system_prompt (str): Instrucción inicial del sistema para guiar al modelo de lenguaje.</p></li>
+<li><p>context (list): Contexto actualizado que será usado en la generación del LLM.</p></li>
+<li><dl class="simple">
+<dt>rag_flow (str): Tipo de flujo RAG aplicado, que puede ser:</dt><dd><ul>
+<li><p>id_arxiv: Identificador de arXiv detectado.</p></li>
+<li><p>consultar_temp: Consulta basada en temporalidad.</p></li>
+<li><p>consultar_docs_chunk: Consulta con recuperación por chunks.</p></li>
+<li><p>consultar_docs_resumen: Consulta con recuperación por resúmenes.</p></li>
+<li><p>recuperacion_vacia: No se recuperaron documentos relevantes.</p></li>
+<li><p>hablar: Interacción de conversación general.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Chatbot_functions.actualizacion_informacion_inicial">
+<span class="sig-prename descclassname"><span class="pre">Functions.Chatbot_functions.</span></span><span class="sig-name descname"><span class="pre">actualizacion_informacion_inicial</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Chatbot_functions.actualizacion_informacion_inicial" title="Link to this definition"></a></dt>
+<dd><p>Actualiza la información contextual inicial utilizada por el LLM.</p>
+<p>Esta función se conecta a la base de datos y genera un resumen actualizado
+con la fecha mínima y máxima de publicación, el número total de publicaciones,
+y un enlace a la página principal de ArXiv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Cadena de texto con la información inicial formateada.</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error al conectar o consultar la base de datos.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Chatbot_functions.deteccion_intencion">
+<span class="sig-prename descclassname"><span class="pre">Functions.Chatbot_functions.</span></span><span class="sig-name descname"><span class="pre">deteccion_intencion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#Functions.Chatbot_functions.deteccion_intencion" title="Link to this definition"></a></dt>
+<dd><p>Clasifica la intención del usuario en consultar o hablar, usando el LLM.</p>
+<p>Esta función envía una instrucción al LLM para determinar si el input del usuario
+tiene intención de:
+- Consultar: cuando desea recuperar información de una base de datos.
+- Hablar: cuando no se detectan verbos relacionados con la consulta.</p>
+<p>El modelo debe responder exclusivamente con un JSON:
+{ «intencion»: «consultar» } o { «intencion»: «hablar» }</p>
+<p>Si la respuesta es inválida o el modelo falla, se asume por defecto que la intención es “hablar”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>user_input</strong> (<em>str</em>) – Texto introducido por el usuario.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>“consultar” o “hablar”, según lo detectado por el modelo.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Chatbot_functions.deteccion_temporalidad">
+<span class="sig-prename descclassname"><span class="pre">Functions.Chatbot_functions.</span></span><span class="sig-name descname"><span class="pre">deteccion_temporalidad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Chatbot_functions.deteccion_temporalidad" title="Link to this definition"></a></dt>
+<dd><p>Detecta y clasifica referencias temporales presentes en el input del usuario.</p>
+<p>Analiza el texto para identificar meses, años o expresiones temporales comunes.</p>
+<p>Clasifica la detección como una de las siguientes categorías:
+- Combinada: Detecta meses y años.
+- Mes: Detecta meses.
+- Anio: Detecta años.
+- EXP: Detecta una expresión temporal relativa, como ayer o últimos 3 días.
+- None: Si no se encuentra ninguna referencia temporal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>user_input</strong> (<em>str</em>) – Texto de entrada del usuario.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tupla con la categoría detectada, los valores asociados y el input original.</dt><dd><p>None si no se detecta ninguna temporalidad.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple o None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Chatbot_functions.detectar_identificador_arxiv">
+<span class="sig-prename descclassname"><span class="pre">Functions.Chatbot_functions.</span></span><span class="sig-name descname"><span class="pre">detectar_identificador_arxiv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.Chatbot_functions.detectar_identificador_arxiv" title="Link to this definition"></a></dt>
+<dd><p>Detecta si hay un identificador de arXiv válido dentro del texto proporcionado por el usuario.</p>
+<p>Utiliza expresiones regulares para buscar identificadores válidos de arXiv.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>user_input</strong> (<em>str</em>) – Texto introducido por el usuario que podría contener un identificador de arXiv.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Identificador de arXiv encontrado sin el prefijo arXiv, o None si no se encuentra ninguno.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str o None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Chatbot_functions.eliminacion_acentos">
+<span class="sig-prename descclassname"><span class="pre">Functions.Chatbot_functions.</span></span><span class="sig-name descname"><span class="pre">eliminacion_acentos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#Functions.Chatbot_functions.eliminacion_acentos" title="Link to this definition"></a></dt>
+<dd><p>Elimina los acentos de las vocales en una cadena de texto y la convierte a minúsculas.</p>
+<p>Esta función reemplaza las vocales acentuadas tanto en minúsculas como en mayúsculas
+por sus equivalentes sin acento, y transforma todo el texto a minúsculas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>user_input</strong> (<em>str</em>) – Cadena de texto que puede contener vocales acentuadas.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Texto sin acentos y en minúsculas.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.Chatbot_functions.limitador_contexto">
+<span class="sig-prename descclassname"><span class="pre">Functions.Chatbot_functions.</span></span><span class="sig-name descname"><span class="pre">limitador_contexto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_men</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#Functions.Chatbot_functions.limitador_contexto" title="Link to this definition"></a></dt>
+<dd><p>Limita la longitud del historial de contexto eliminando los mensajes más antiguos.</p>
+<p>Si el número de mensajes excede el límite definido por max_men,
+los mensajes más antiguos se eliminan para mantener el tamaño permitido.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_context</strong> (<em>list</em>) – Lista de mensajes que representa el historial del contexto.</p></li>
+<li><p><strong>max_men</strong> (<em>int</em><em>, </em><em>optional</em>) – Número máximo de mensajes permitidos. Por defecto es 50.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Lista de mensajes truncada si se excede el máximo permitido.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Pie de página">
+        <a href="BBDD_functions.html" class="btn btn-neutral float-left" title="Functions.BBDD_functions module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Anterior</a>
+        <a href="Docling_OCR.html" class="btn btn-neutral float-right" title="Functions.Docling_OCR module" accesskey="n" rel="next">Siguiente <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Derechos de autor 2025, Roi Pereira Fiuza.</p>
+  </div>
+
+  Compilado con <a href="https://www.sphinx-doc.org/">Sphinx</a> usando un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">tema</a>
+    proporcionado por <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

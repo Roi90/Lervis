@@ -1,0 +1,600 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="es" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Functions.BBDD_functions module &mdash; documentación de Lervis - 1.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=4936afed"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=f85f4cfb"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Índice" href="genindex.html" />
+    <link rel="search" title="Búsqueda" href="search.html" />
+    <link rel="next" title="Functions.Chatbot_functions module" href="Chatbot_functions.html" />
+    <link rel="prev" title="Functions.API_metadata module" href="API_metadata.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Lervis
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Buscar documentos" aria-label="Buscar documentos" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="API_metadata.html">Functions.API_metadata module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Functions.BBDD_functions module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.carga_dimension_categorias"><code class="docutils literal notranslate"><span class="pre">carga_dimension_categorias()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.carga_doc_enriquecido"><code class="docutils literal notranslate"><span class="pre">carga_doc_enriquecido()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.carga_hechos_chunks_embeddings"><code class="docutils literal notranslate"><span class="pre">carga_hechos_chunks_embeddings()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.carga_hechos_publicaciones"><code class="docutils literal notranslate"><span class="pre">carga_hechos_publicaciones()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.carga_hechos_resumen_embeddings"><code class="docutils literal notranslate"><span class="pre">carga_hechos_resumen_embeddings()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.conn_bbdd"><code class="docutils literal notranslate"><span class="pre">conn_bbdd()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.dict_catetorias"><code class="docutils literal notranslate"><span class="pre">dict_catetorias()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.formatear_metadata"><code class="docutils literal notranslate"><span class="pre">formatear_metadata()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.formato_contexto_doc_recuperados"><code class="docutils literal notranslate"><span class="pre">formato_contexto_doc_recuperados()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.hstore_a_dict"><code class="docutils literal notranslate"><span class="pre">hstore_a_dict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.normalizador_id_categoria_BBDD"><code class="docutils literal notranslate"><span class="pre">normalizador_id_categoria_BBDD()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.normalizador_id_embeddings_BBDD"><code class="docutils literal notranslate"><span class="pre">normalizador_id_embeddings_BBDD()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.recuperar_documento_por_arxiv_id"><code class="docutils literal notranslate"><span class="pre">recuperar_documento_por_arxiv_id()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.reranking"><code class="docutils literal notranslate"><span class="pre">reranking()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.similitud_coseno_chunks"><code class="docutils literal notranslate"><span class="pre">similitud_coseno_chunks()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.similitud_coseno_resumen"><code class="docutils literal notranslate"><span class="pre">similitud_coseno_resumen()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Functions.BBDD_functions.temporalidad_a_SQL"><code class="docutils literal notranslate"><span class="pre">temporalidad_a_SQL()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Chatbot_functions.html">Functions.Chatbot_functions module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Docling_OCR.html">Functions.Docling_OCR module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Embeddings.html">Functions.Embeddings module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Enriquecimiento_documento.html">Functions.Enriquecimiento_documento module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Florence_2_anotacion.html">Functions.Florence_2_anotacion module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Loggers.html">Functions.Loggers module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MarianMT_traductor.html">Functions.MarianMT_traductor module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="PDF_descarga.html">Functions.PDF_descarga module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Lervis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Functions.BBDD_functions module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/BBDD_functions.rst.txt" rel="nofollow"> Ver código fuente de la página</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-Functions.BBDD_functions">
+<span id="functions-bbdd-functions-module"></span><h1>Functions.BBDD_functions module<a class="headerlink" href="#module-Functions.BBDD_functions" title="Link to this heading"></a></h1>
+<p>Este archivo contiene funciones para conectarse a una base de datos PostgreSQL.
+Proporciona métodos para crear un motor de conexión.</p>
+<p>Autor: Roi Pereira Fiuza</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.carga_dimension_categorias">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">carga_dimension_categorias</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.carga_dimension_categorias" title="Link to this definition"></a></dt>
+<dd><p>Inserta las categorías de arXiv en la tabla categoria de la base de datos y retorna un diccionario de mapeo.</p>
+<p>Esta función carga los datos desde el diccionario categorias_arxiv a la base de datos PostgreSQL,
+y luego construye un diccionario que mapea cada código de categoría a su ID correspondiente en la tabla.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>conn</strong> (<em>psycopg.Connection</em>) – Objeto de conexión a la base de datos PostgreSQL.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario donde las claves son códigos de categoría (str) y los valores son los IDs (int) en la tabla categoria.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – Si ocurre un error al recuperar los datos tras la inserción, la excepción se lanza nuevamente.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.carga_doc_enriquecido">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">carga_doc_enriquecido</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">documento_enriquecido</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">identificador_arxiv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.carga_doc_enriquecido" title="Link to this definition"></a></dt>
+<dd><p>Actualiza el documento enriquecido en la base de datos.</p>
+<p>Esta función actualiza el campo documento_completo de la tabla publicaciones para el
+registro correspondiente al identificador de arXiv proporcionado.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>documento_enriquecido</strong> (<em>str</em>) – Documento enriquecido a insertar en la base de datos.</p></li>
+<li><p><strong>identificador_arxiv</strong> (<em>str</em>) – Identificador único de la publicación en arXiv.</p></li>
+<li><p><strong>conn</strong> (<em>psycopg.Connection</em>) – Conexión activa a la base de datos PostgreSQL.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la actualización de los datos.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.carga_hechos_chunks_embeddings">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">carga_hechos_chunks_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engine</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.carga_hechos_chunks_embeddings" title="Link to this definition"></a></dt>
+<dd><p>Inserta los datos de embeddings por chunks en la base de datos.</p>
+<p>Esta función toma un DataFrame que contiene los embeddings generados por fragmento (chunk)
+y los inserta en la tabla embeddings_chunks. Se usa el DataFrame, ya que facilita la insercion
+de los vetores dispersos HSTORE.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em>) – DataFrame con los datos de embeddings a insertar. Debe contener todas las columnas</p></li>
+<li><p><strong>'embeddings_chunks'.</strong> (<em>requeridas por la tabla</em>)</p></li>
+<li><p><strong>engine</strong> (<em>sqlalchemy.engine.Engine</em>) – Motor de conexión a la base de datos PostgreSQL.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la inserción de los datos.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.carga_hechos_publicaciones">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">carga_hechos_publicaciones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.carga_hechos_publicaciones" title="Link to this definition"></a></dt>
+<dd><p>Inserta los datos de publicaciones en la base de datos y devuelve un diccionario de identificadores.</p>
+<p>Esta función toma un DataFrame que contiene información sobre publicaciones científicas extraídas de arXiv
+y las inserta en la tabla publicaciones de la base de datos.</p>
+<p>Posteriormente, recupera y devuelve un diccionario que relaciona cada identificador de arXiv con su ID asignado en la base de datos.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> (<em>psycopg.Connection</em>) – Objeto de conexión a la base de datos PostgreSQL.</p></li>
+<li><p><strong>df</strong> (<em>DataFrame</em>) – DataFrame que contiene los datos de publicaciones a insertar. Debe contener las columnas:</p></li>
+<li><p><strong>'titulo'</strong></p></li>
+<li><p><strong>'autores'</strong></p></li>
+<li><p><strong>'fecha_publicacion'</strong></p></li>
+<li><p><strong>'categoria_principal'</strong></p></li>
+</ul>
+</dd>
+</dl>
+<p>:param :
+:param “categorias_lista”:
+:param “url_pdf”:
+:param “identificador_arxiv”.:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Diccionario donde las claves son identificadores de arXiv (str) y los valores son IDs (int)</dt><dd><p>generados en la tabla “publicaciones”.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la inserción o recuperación de datos en la base de datos.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.carga_hechos_resumen_embeddings">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">carga_hechos_resumen_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">engine</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.carga_hechos_resumen_embeddings" title="Link to this definition"></a></dt>
+<dd><p>Inserta los datos de embeddings por resumen en la base de datos.</p>
+<p>Esta función toma un DataFrame que contiene los embeddings generados a partir de resúmenes
+y los inserta en la tabla embeddings_resumen. Se usa el DataFrame, ya que facilita la inserción
+de los vectores dispersos HSTORE.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em>) – DataFrame con los datos de embeddings a insertar. Debe contener todas las columnas</p></li>
+<li><p><strong>'embeddings_resumen'.</strong> (<em>requeridas por la tabla</em>)</p></li>
+<li><p><strong>engine</strong> (<em>sqlalchemy.engine.Engine</em>) – Motor de conexión a la base de datos PostgreSQL.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la inserción de los datos.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.conn_bbdd">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">conn_bbdd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.conn_bbdd" title="Link to this definition"></a></dt>
+<dd><p>Establece una conexión con una base de datos PostgreSQL y devuelve el objeto de conexión.</p>
+<p>Utiliza psycopg para crear una conexión a la base de datos definida por DATABASE_URL,
+aplicando row_factory=dict_row para obtener los resultados como diccionarios.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Objeto de conexión activo a la base de datos PostgreSQL.</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>psycopg.Connection</p>
+</dd>
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Si ocurre un error durante la conexión, se registra y se lanza de nuevo.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.dict_catetorias">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">dict_catetorias</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.dict_catetorias" title="Link to this definition"></a></dt>
+<dd><p>Recupera un diccionario que mapea códigos de categoría a sus respectivos IDs desde la base de datos.</p>
+<p>Esta función consulta la tabla categoria de la base de datos y construye un diccionario donde
+cada clave es un código de categoría y su valor es el ID correspondiente.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>conn</strong> (<em>psycopg.Connection</em>) – Objeto de conexión a la base de datos PostgreSQL.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con claves como códigos de categoría (str) y valores como IDs (int).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – Si ocurre un error durante la consulta SQL.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.formatear_metadata">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">formatear_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.formatear_metadata" title="Link to this definition"></a></dt>
+<dd><p>Formatea los metadatos de una publicación científica en un bloque de texto legible.</p>
+<p>Esta función toma un diccionario con información de una publicación de arXiv y devuelve
+una cadena formateada en estilo Markdown con título, ID, autores, fecha, URL y resumen.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>doc</strong> (<em>dict</em>) – Diccionario con los campos necesarios, incluyendo:
+- titulo (str)
+- identificador_arxiv (str)
+- categoria (str)
+- autores (str)
+- fecha_publicacion (str)
+- url_pdf (str)
+- resumen (str)</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Texto formateado en estilo Markdown, orientado para la lectura del LLM.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.formato_contexto_doc_recuperados">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">formato_contexto_doc_recuperados</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">urls_usados</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_docs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#Functions.BBDD_functions.formato_contexto_doc_recuperados" title="Link to this definition"></a></dt>
+<dd><p>Esta funcion formatea los documentos recuperados de la base de datos en la recuperacion de
+documentos.</p>
+<p>Esta función toma los identificadores de los documentos de un DataFrame,
+recupera sus metadatos y resúmenes desde la base de datos, y genera un texto formateado
+para ser usado como contexto en el LLM.</p>
+<p>Se evita la duplicación utilizando el conjunto urls_usados.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>urls_usados</strong> (<em>set</em>) – Conjunto que almacena las URLs ya formateadas para evitar duplicaciones.</p></li>
+<li><p><strong>conn</strong> (<em>psycopg.Connection</em>) – Conexión activa a la base de datos PostgreSQL.</p></li>
+<li><p><strong>df</strong> (<em>DataFrame</em>) – DataFrame ordenado con los documentos recuperados y sus puntuaciones.</p></li>
+<li><p><strong>num_docs</strong> (<em>int</em>) – Número de documentos a incluir en el contexto. Por defecto 2.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Texto formateado con los metadatos de los documentos seleccionados. Si ocurre un error,</dt><dd><p>se devuelve una cadena vacía.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.hstore_a_dict">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">hstore_a_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hstore_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#Functions.BBDD_functions.hstore_a_dict" title="Link to this definition"></a></dt>
+<dd><p>Convierte una cadena en formato HSTORE a un diccionario.</p>
+<p>Esta función toma una cadena con formato HSTORE y la convierte a un diccionario con claves
+tipo str y valores tipo float.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hstore_str</strong> (<em>str</em>) – String en formato HSTORE, con pares clave/valor separados por “=&gt;”.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario Python con los valores convertidos. Devuelve un diccionario vacío si falla la conversión.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – Solo se registra el error. No se lanza, para evitar la interrupción del flujo.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.normalizador_id_categoria_BBDD">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">normalizador_id_categoria_BBDD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diccionario</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.normalizador_id_categoria_BBDD" title="Link to this definition"></a></dt>
+<dd><p>Normaliza los IDs de las categorías en el DataFrame usando un diccionario de mapeo.</p>
+<p>Esta función transforma los valores de la columna categoria_principal del DataFrame
+utilizando un diccionario que relaciona códigos de categoría con sus correspondientes IDs
+en la base de datos.</p>
+<p>Se utiliza para asegurar la integridad referencial al cargar datos en la tabla de hechos
+publicaciones.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em>) – DataFrame con las publicaciones que contienen códigos de categorías.</p></li>
+<li><p><strong>diccionario</strong> (<em>dict</em>) – Diccionario que mapea códigos de categoría (str) a IDs de la BBDD (int).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame con la columna categoria_principal normalizada por IDs,
+y limitado a las columnas relevantes para su posterior inserción.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – Si el DataFrame no contiene todas las columnas esperadas.</p></li>
+<li><p><strong>Exception</strong> – Si ocurre un error durante la normalización de la columna.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.normalizador_id_embeddings_BBDD">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">normalizador_id_embeddings_BBDD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diccionario</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.normalizador_id_embeddings_BBDD" title="Link to this definition"></a></dt>
+<dd><p>Normaliza los IDs de publicaciones en el DataFrame usando un diccionario de mapeo.</p>
+<p>Esta función reemplaza los valores en la columna id_publicaciones por los correspondientes IDs
+obtenidos de la base de datos. Se utiliza para asegurar que los embeddings se asocien correctamente
+con sus registros en la tabla de hechos de publicaciones.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>DataFrame</em>) – DataFrame con los datos de embeddings a normalizar. Debe contener las columnas</p></li>
+<li><p><strong>resúmenes.</strong> (<em>esperadas para chunks y</em>)</p></li>
+<li><p><strong>diccionario</strong> (<em>dict</em>) – Diccionario que mapea identificadores originales a IDs de la BBDD.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame con la columna id_publicaciones normalizada por IDs.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – Si el DataFrame no contiene todas las columnas esperadas.</p></li>
+<li><p><strong>Exception</strong> – Si ocurre un error durante la normalización de la columna.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.recuperar_documento_por_arxiv_id">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">recuperar_documento_por_arxiv_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arxiv_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conn</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.recuperar_documento_por_arxiv_id" title="Link to this definition"></a></dt>
+<dd><p>Recupera el título y el texto completo del documento enriquecido desde la base de datos utilizando su identificador de arXiv.</p>
+<p>Esta función consulta la base de datos para encontrar un documento cuyo identificador coincida con el valor
+proporcionado.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arxiv_id</strong> (<em>str</em>) – Identificador único del documento en arXiv.</p></li>
+<li><p><strong>conn</strong> (<em>psycopg.Connection</em>) – Conexión activa a la base de datos PostgreSQL.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>str: Título del documento.</p></li>
+<li><p>str: Texto completo del documento si se encuentra, o un mensaje indicando que no existe.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>No lanza excepciones. Si ocurre un error</strong><strong>, </strong><strong>lo registra en el logger y devuelve None.</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.reranking">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">reranking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">documentos_recuperados</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedding_disperso</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.reranking" title="Link to this definition"></a></dt>
+<dd><p>Reordena documentos basándose en similitud de contenido y vocabulario.</p>
+<p>Esta función transforma los vectores dispersos HSTORE de los documentos recuperados a diccionarios,
+calcula la similitud de vocabulario como la intersección de claves entre los embeddings,
+y luego ordena los documentos por similitud de contenido y vocabulario.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>documentos_recuperados</strong> (<em>list</em><em> of </em><em>dict</em>) – Lista de documentos recuperados desde la base de datos.</p></li>
+<li><p><strong>embedding_disperso</strong> (<em>dict</em>) – Embedding disperso del prompt de búsqueda.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame ordenado, primero por similitud de contenido (ascendente)
+y luego por similitud de vocabulario (descendente).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – Se registra cualquier error encontrado durante el reordenamiento.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.similitud_coseno_chunks">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">similitud_coseno_chunks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_denso</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">umbral_distancia</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_docs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#Functions.BBDD_functions.similitud_coseno_chunks" title="Link to this definition"></a></dt>
+<dd><p>Recupera los fragmentos (chunks) más similares a un vector de embedding denso usando similitud del coseno.</p>
+<p>Esta función consulta la base de datos para encontrar los fragmentos de texto (chunks) cuyo vector de embedding
+denso tiene mayor similitud con respecto a un vector de entrada.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embedding_denso</strong> (<em>np.array</em>) – Vector de embedding denso a comparar.</p></li>
+<li><p><strong>conn</strong> (<em>psycopg.Connection</em>) – Conexión activa a la base de datos PostgreSQL.</p></li>
+<li><p><strong>umbral_distancia</strong> (<em>float</em>) – Umbral máximo de distancia del coseno permitido para considerar un chunk como relevante.</p></li>
+<li><p><strong>n_docs</strong> (<em>int</em>) – Número máximo de documentos a recuperar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Lista de diccionarios con los chunks recuperados que cumplen con el umbral de similitud,
+ordenados de mayor a menor similitud. Cada entrada incluye id, id_publicaciones, chunk_emb_sparse,
+chunk y la similitud_contenido.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – Si ocurre un error durante la ejecución de la consulta SQL.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.similitud_coseno_resumen">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">similitud_coseno_resumen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embedding_denso</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">umbral_distancia</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_docs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#Functions.BBDD_functions.similitud_coseno_resumen" title="Link to this definition"></a></dt>
+<dd><p>Recupera los resúmenes más similares a un vector de embedding denso usando similitud del coseno.</p>
+<p>Esta función consulta la tabla embeddings_resumen para encontrar los resúmenes de documentos
+cuyo vector de embedding denso presenta la menor distancia del coseno respecto al vector de entrada.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embedding_denso</strong> (<em>np.array</em>) – Vector de embedding denso del resumen de entrada.</p></li>
+<li><p><strong>conn</strong> (<em>psycopg.Connection</em>) – Conexión activa a la base de datos PostgreSQL.</p></li>
+<li><p><strong>umbral_distancia</strong> (<em>float</em>) – Umbral máximo de distancia coseno para considerar un resumen como relevante.</p></li>
+<li><p><strong>n_docs</strong> (<em>int</em>) – Número máximo de resúmenes/documentos a recuperar.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Lista de diccionarios con los chunks recuperados que cumplen con el umbral de similitud,
+ordenados de mayor a menor similitud. Cada entrada incluye id, id_publicaciones, chunk_emb_sparse,
+chunk y la similitud_contenido.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – Si ocurre un error durante la consulta a la base de datos.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="Functions.BBDD_functions.temporalidad_a_SQL">
+<span class="sig-prename descclassname"><span class="pre">Functions.BBDD_functions.</span></span><span class="sig-name descname"><span class="pre">temporalidad_a_SQL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temporalidad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Functions.BBDD_functions.temporalidad_a_SQL" title="Link to this definition"></a></dt>
+<dd><p>Genera y ejecuta una consulta SQL para contar publicaciones según una condición temporal.</p>
+<p>Esta función interpreta la estructura de la temporalidad extraída del input del usuario
+y construye dinámicamente una consulta SQL para recuperar el número de publicaciones
+en la base de datos que cumplen con las condiciones de tiempo (mes, año o ambas).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> (<em>psycopg.Connection</em>) – Conexión activa a la base de datos PostgreSQL.</p></li>
+<li><p><strong>temporalidad</strong> (<em>tuple</em>) – Tupla con tres elementos:
+- tipo (str): Puede ser Combinada, Mes, Anio o EXP.
+- valores (dict o list o int): Información temporal según el tipo.
+- texto_usuario (str): Texto original proporcionado por el usuario.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Número de publicaciones que cumplen con la condición temporal,
+o None si ocurre un error en la consulta.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int or None</p>
+</dd>
+<dt class="field-even">Muestra<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>No se lanzan errores. Se registran mediante logger y se devuelve None en caso de fallo.</strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Pie de página">
+        <a href="API_metadata.html" class="btn btn-neutral float-left" title="Functions.API_metadata module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Anterior</a>
+        <a href="Chatbot_functions.html" class="btn btn-neutral float-right" title="Functions.Chatbot_functions module" accesskey="n" rel="next">Siguiente <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Derechos de autor 2025, Roi Pereira Fiuza.</p>
+  </div>
+
+  Compilado con <a href="https://www.sphinx-doc.org/">Sphinx</a> usando un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">tema</a>
+    proporcionado por <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
