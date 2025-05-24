@@ -76,8 +76,9 @@ def chat():
     user_input = data['message']
 
     # Obtiene el contexto de la BBDD o mensaje inicial
-    context = session.get('context', f'{info_inicial}\n \n{ahora} - Usuario: {user_input}')
-
+    context = session.get('context', [{"role": "assistant", "content": info_inicial}])
+    
+    #context.append({"role": "user", "content": user_input})
     #context += f"\n\n{ahora} - Usuario: {user_input}"
     context = limitador_contexto(context)
 
@@ -86,7 +87,7 @@ def chat():
 
     try:
         # Manejo del contexto dentro de la función dependiendo de las funciones invocadas
-        system_prompt, context_prompt, user_prompt  = RAG_chat_V2(
+        system_prompt, context_prompt, rag_flow  = RAG_chat_V2(
             urls_usados=urls_usados,
             user_input=user_input,
             context=context,
@@ -96,6 +97,8 @@ def chat():
             traductor_model=traductor_model,
             traductor_tokenizer=traductor_tokenizer
         )
+        # Se guarda para recuperarlo en el logger de la evaluacion del RAG
+        session['rag_flow'] = rag_flow
         
     except Exception as e:
         logger.error(f"Error en RAG_chat_V2: {e}")
@@ -103,7 +106,7 @@ def chat():
         return Response("Perdon, se me cruzaron los cables, ¿Podrías repetirlo?")
         
     def generate():
-        for token in Llama3_1_API(system_prompt, context_prompt, user_prompt):
+        for token in Llama3_1_API(system_prompt, context_prompt, user_input, rag_flow):
             yield token 
 
     return Response(
@@ -121,6 +124,7 @@ def save_context():
     data = request.json
     input_usuario = data['mensaje_usuario']
     respuesta_lervis = data['respuesta_lervis']
+    rag_flow = session.get('rag_flow', 'desconocido')
     
     # --- User Vs LLM -- Evaluacion
     emb_usr_dense, emb_usr_sparse = embedding_evaluator(input_usuario, modelo_BAAI)
@@ -139,18 +143,24 @@ def save_context():
     # Metrica textual
     scores = scorer.score(input_usuario, respuesta_lervis)
 
-    rag_evaluator.debug(f'Similitud coseno - {sim_semantica}, Similitud Jaccard - {similitud_jaccard}, Precision ROUGE 1 - {round(scores["rouge1"][0],2)}, Recall ROUGE 1 - {round(scores["rouge1"][1],2)}, Score ROUGE 1 - {round(scores["rouge1"][2],2)}, Precision ROUGE 2 - {round(scores["rouge2"][0],2)}, Recall ROUGE 2 - {round(scores["rouge2"][1],2)}, Score ROUGE 2 - {round(scores["rouge2"][2],2)}, Precision ROUGE L - {round(scores["rougeL"][0],2)}, Recall ROUGE L - {round(scores["rougeL"][1],2)}, Score ROUGE L - {round(scores["rougeL"][2],2)}')
+    rag_evaluator.debug(f'Rag_flow - {rag_flow}, Longitud user input - {len(input_usuario)}, longitud llm output - {len(respuesta_lervis)} ,Similitud coseno - {sim_semantica}, Similitud Jaccard - {similitud_jaccard}, Precision ROUGE 1 - {round(scores["rouge1"][0],2)}, Recall ROUGE 1 - {round(scores["rouge1"][1],2)}, Score ROUGE 1 - {round(scores["rouge1"][2],2)}, Precision ROUGE 2 - {round(scores["rouge2"][0],2)}, Recall ROUGE 2 - {round(scores["rouge2"][1],2)}, Score ROUGE 2 - {round(scores["rouge2"][2],2)}, Precision ROUGE L - {round(scores["rougeL"][0],2)}, Recall ROUGE L - {round(scores["rougeL"][1],2)}, Score ROUGE L - {round(scores["rougeL"][2],2)}')
 
     ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
     # Si no hay contexto se crea uno nuevo junto con la informacion inicial
-    contexto_nuevo = session.get('context', f'{info_inicial}\n\n{ahora} - Lervis: Bienvenido a Lervis')
+    contexto_nuevo = session.get('context', [{"role": "asisstant", "content": info_inicial}])
 
     # Se apendiza el input del usuario y la respuesta de Lervis al contexto
-    contexto_nuevo += f"\n\n{ahora} - Usuario: {input_usuario}"
-    contexto_nuevo += f"\n\n{ahora} - Lervis: {respuesta_lervis}"
-    session['context'] = limitador_contexto(contexto_nuevo)
+    #contexto_nuevo += f"\n\n{ahora} - Usuario: {input_usuario}"
+    #contexto_nuevo += f"\n\n{ahora} - Lervis: {respuesta_lervis}"
+    contexto_nuevo.append({"role": "user", "content": input_usuario}) 
+    contexto_nuevo.append({"role": "assistant", "content": respuesta_lervis}) 
+    contexto_nuevo = limitador_contexto(contexto_nuevo)
+
+    session['context'] = contexto_nuevo
     session.modified = True
+
     return '', 204
+
 
 
 if __name__ == '__main__':
