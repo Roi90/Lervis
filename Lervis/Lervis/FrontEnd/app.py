@@ -70,7 +70,6 @@ def reset():
 @app.route('/chat', methods=['POST']) 
 def chat():
 
-    ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
     # Toda la informacion que nos devuelve la accion POST (escribir en el chat)
     data = request.json
     user_input = data['message']
@@ -127,27 +126,29 @@ def save_context():
     rag_flow = session.get('rag_flow', 'desconocido')
     
     # --- User Vs LLM -- Evaluacion
-    emb_usr_dense, emb_usr_sparse = embedding_evaluator(input_usuario, modelo_BAAI)
-    emb_llm_dense, emb_llm_sparse = embedding_evaluator(respuesta_lervis, modelo_BAAI)
+    try:
+        emb_usr_dense, emb_usr_sparse = embedding_evaluator(input_usuario, modelo_BAAI)
+        emb_llm_dense, emb_llm_sparse = embedding_evaluator(respuesta_lervis, modelo_BAAI)
 
-    user_set = set(emb_usr_sparse.keys())
-    llm_set = set(emb_llm_sparse.keys())
+        user_set = set(emb_usr_sparse.keys())
+        llm_set = set(emb_llm_sparse.keys())
 
-    interseccion = llm_set.intersection(user_set)
-    union = llm_set.union(user_set)
+        interseccion = llm_set.intersection(user_set)
+        union = llm_set.union(user_set)
 
-    # Metrica Lexica
-    similitud_jaccard = len(interseccion) / len(union)
-    # Metrica semantica
-    sim_semantica = cosine_similarity(emb_usr_dense.reshape(1, -1), emb_llm_dense.reshape(1, -1))[0][0]
-    # Metrica textual
-    scores = scorer.score(input_usuario, respuesta_lervis)
+        # Metrica Lexica
+        similitud_jaccard = len(interseccion) / len(union)
+        # Metrica semantica
+        sim_semantica = cosine_similarity(emb_usr_dense.reshape(1, -1), emb_llm_dense.reshape(1, -1))[0][0]
+        # Metrica textual
+        scores = scorer.score(input_usuario, respuesta_lervis)
 
-    rag_evaluator.debug(f'Rag_flow - {rag_flow}, Longitud user input - {len(input_usuario)}, longitud llm output - {len(respuesta_lervis)} ,Similitud coseno - {sim_semantica}, Similitud Jaccard - {similitud_jaccard}, Precision ROUGE 1 - {round(scores["rouge1"][0],2)}, Recall ROUGE 1 - {round(scores["rouge1"][1],2)}, Score ROUGE 1 - {round(scores["rouge1"][2],2)}, Precision ROUGE 2 - {round(scores["rouge2"][0],2)}, Recall ROUGE 2 - {round(scores["rouge2"][1],2)}, Score ROUGE 2 - {round(scores["rouge2"][2],2)}, Precision ROUGE L - {round(scores["rougeL"][0],2)}, Recall ROUGE L - {round(scores["rougeL"][1],2)}, Score ROUGE L - {round(scores["rougeL"][2],2)}')
-
+        rag_evaluator.debug(f'Rag_flow - {rag_flow}, Longitud user input - {len(input_usuario)}, longitud llm output - {len(respuesta_lervis)} ,Similitud coseno - {sim_semantica}, Similitud Jaccard - {similitud_jaccard}, Precision ROUGE 1 - {round(scores["rouge1"][0],2)}, Recall ROUGE 1 - {round(scores["rouge1"][1],2)}, Score ROUGE 1 - {round(scores["rouge1"][2],2)}, Precision ROUGE 2 - {round(scores["rouge2"][0],2)}, Recall ROUGE 2 - {round(scores["rouge2"][1],2)}, Score ROUGE 2 - {round(scores["rouge2"][2],2)}, Precision ROUGE L - {round(scores["rougeL"][0],2)}, Recall ROUGE L - {round(scores["rougeL"][1],2)}, Score ROUGE L - {round(scores["rougeL"][2],2)}')
+    except Exception as e:
+        rag_evaluator.error(f'Error en la generacion de metricas: {e} ')
     ahora = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
     # Si no hay contexto se crea uno nuevo junto con la informacion inicial
-    contexto_nuevo = session.get('context', [{"role": "asisstant", "content": info_inicial}])
+    contexto_nuevo = session.get('context', [{"role": "assistant", "content": info_inicial}])
 
     # Se apendiza el input del usuario y la respuesta de Lervis al contexto
     #contexto_nuevo += f"\n\n{ahora} - Usuario: {input_usuario}"

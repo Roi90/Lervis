@@ -244,8 +244,8 @@ def deteccion_intencion(user_input: str) -> str:
     system_prompt = (
     "Eres un clasificador cuya única función es decidir entre dos intenciones:\n\n"
 
-    "- consultar = El usuario quiere consultar, buscar, recuperar o encontrar información en la base de datos. "
-    "Usa 'consultar' si detectas verbos como consultar, buscar, encontrar, obtener, recuperar, listar, investigar, explorar.\n"
+    "- consultar = El usuario quiere consultar, buscar información en la base de datos. "
+    "Usa 'consultar' si detectas verbos como consultar o buscar.\n"
     "- hablar = Siempre que no encuentres los verbos de consultar sera hablar.\n\n"
     "Debes RESPONDER **SIEMPRE** estrictamente con un JSON como uno de estos:\n"
     "{ \"intencion\": \"consultar\" }\n"
@@ -253,8 +253,8 @@ def deteccion_intencion(user_input: str) -> str:
     "{ \"intencion\": \"hablar\" }\n\n"
     "¡SIN NADA MÁS Y SIN ACENTOS NI COMENTARIOS! Únicamente responde con la clave \"intencion\"."
 )
-    #full_prompt = f"{system_prompt}\n\nUsuario: {user_input}\nClasificación:"
-
+    
+#buscar, encontrar, obtener, recuperar, listar, investigar, explorar
     try:
         response = chat(
             model="llama3.1",
@@ -409,7 +409,7 @@ def detectar_identificador_arxiv(user_input: str):
     Returns:
         str o None: Identificador de arXiv encontrado sin el prefijo arXiv, o None si no se encuentra ninguno.
     """
-    patron_arxiv = r"(?:arxiv:)?(\d{4}\.\d{4,5}(?:v\d+)?"
+    patron_arxiv = r"(?:arxiv:)?(\d{4}\.\d{4,5}(?:v\d+)?)"
     # Ejemplo válido: 2101.12345v2 o arxiv:2101.12345
         # (?:arxiv:)? =  Grupo opcional para el prefijo 'arxiv:'
         # \d{4} = 4 dígitos del año, como 2101

@@ -143,6 +143,8 @@ try:
                 break
             try:
                 inicio = time.time()
+                # Carga del documento enriquecido en la BBDD
+                carga_doc_enriquecido(documento_enriquecido, publicacion.identificador_arxiv,  conn)
                 # Genero chunks del documento mas grande para realizar un embedding medio, dado que los documentos
                 # superan la cantidad de tokens que el modelo puede ingerir
                 try:
@@ -155,8 +157,7 @@ try:
                     embedding_doc_enri_media_denso = np.mean(doc_chunks, axis=0)
                 except Exception as e:
                     logger.error(f'Error en la creacion del embedding del documento enriquecido: {e}- Publicacion: {publicacion.identificador_arxiv}')
-                # Carga del documento enriquecido en la BBDD
-                carga_doc_enriquecido(documento_enriquecido, publicacion.identificador_arxiv,  conn)
+                
                 fin = time.time()
                 duracion = fin - inicio
                 logger.debug(f'Carga del documento enriquecido en la BBDD con exito - Duracion segundos: {duracion:.2f} - Publicacion: {publicacion.identificador_arxiv}')

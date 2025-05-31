@@ -66,7 +66,7 @@ def translate_text(model, tokenizer, text):
         duracion = end_time - start_time
 
         # Dado que es de español a ingles se espera que se compacte el texto, por lo que el ratio ha de ser menor a 1
-        ratio = intput_text_length / output_text_length 
+        ratio = float(intput_text_length) / float(output_text_length)
         categoria = 'Esperada'
         if ratio > 1:
             logger.warning(f" Ratio > 1 Texto original - {text}, Texto traducido - {result}")
